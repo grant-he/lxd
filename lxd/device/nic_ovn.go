@@ -398,11 +398,11 @@ func (d *nicOVN) Update(oldDevices deviceConfig.Devices, isRunning bool) error {
 	// veth interface to give the instance a chance to detect the change and re-apply for an
 	// updated lease with new IP address.
 	if d.config["ipv6.address"] != oldConfig["ipv6.address"] && d.config["host_name"] != "" && shared.PathExists(fmt.Sprintf("/sys/class/net/%s", d.config["host_name"])) {
-		_, err := shared.RunCommand("ip", "link", "set", d.config["host_name"], "down")
+		err := network.InterfaceBringDown(d.config["host_name"])
 		if err != nil {
 			return err
 		}
-		_, err = shared.RunCommand("ip", "link", "set", d.config["host_name"], "up")
+		err = network.InterfaceBringUp(d.config["host_name"])
 		if err != nil {
 			return err
 		}

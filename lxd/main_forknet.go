@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/grant-he/lxd/lxd/network"
 
 	"github.com/spf13/cobra"
 
@@ -117,7 +118,6 @@ void forknet(void)
 }
 */
 import "C"
-import "github.com/grant-he/lxd/shared"
 
 type cmdForknet struct {
 	global *cmdGlobal
@@ -188,13 +188,21 @@ func (c *cmdForknet) RunDetach(cmd *cobra.Command, args []string) error {
 
 	// Remove all IP addresses from interface before moving to parent netns.
 	// This is to avoid any container address config leaking into host.
-	_, err := shared.RunCommand("ip", "address", "flush", "dev", ifName)
+	err := network.InterfaceFlushAddresses(ifName)
 	if err != nil {
 		return err
 	}
 
 	// Rename the interface, set it down, and move into parent netns.
-	_, err = shared.RunCommand("ip", "link", "set", ifName, "down", "name", hostName, "netns", lxdPID)
+	err = network.InterfaceBringDown(ifName)
+	if err != nil {
+		return err
+	}
+	err = network.InterfaceSetNamespace(ifName, lxdPID)
+	if err != nil {
+		return err
+	}
+	err = network.InterfaceRename(ifName, hostName)
 	if err != nil {
 		return err
 	}

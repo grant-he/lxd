@@ -157,7 +157,7 @@ func (d *nicMACVLAN) Start() (*deviceConfig.RunConfig, error) {
 
 	// Set the MAC address.
 	if d.config["hwaddr"] != "" {
-		_, err := shared.RunCommand("ip", "link", "set", "dev", saveData["host_name"], "address", d.config["hwaddr"])
+		err := network.InterfaceSetMAC(saveData["host_name"], d.config["hwaddr"])
 		if err != nil {
 			return nil, fmt.Errorf("Failed to set the MAC address: %s", err)
 		}
@@ -165,7 +165,7 @@ func (d *nicMACVLAN) Start() (*deviceConfig.RunConfig, error) {
 
 	// Set the MTU.
 	if d.config["mtu"] != "" {
-		err = network.InterfaceSetMTU(saveData["host_name"], d.config["mtu"])
+		err := network.InterfaceSetMTU(saveData["host_name"], d.config["mtu"])
 		if err != nil {
 			return nil, err
 		}
@@ -173,7 +173,7 @@ func (d *nicMACVLAN) Start() (*deviceConfig.RunConfig, error) {
 
 	if d.inst.Type() == instancetype.VM {
 		// Bring the interface up on host side.
-		_, err := shared.RunCommand("ip", "link", "set", "dev", saveData["host_name"], "up")
+		err := network.InterfaceBringUp(saveData["host_name"])
 		if err != nil {
 			return nil, fmt.Errorf("Failed to bring up interface %s: %v", saveData["host_name"], err)
 		}

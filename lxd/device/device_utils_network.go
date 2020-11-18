@@ -36,7 +36,7 @@ func NetworkSetDevMTU(devName string, mtu uint32) error {
 
 	// Only try and change the MTU if the requested mac is different to current one.
 	if curMTU != mtu {
-		_, err := shared.RunCommand("ip", "link", "set", "dev", devName, "mtu", fmt.Sprintf("%d", mtu))
+		err := network.InterfaceSetMTU(devName, fmt.Sprintf("%d", mtu))
 		if err != nil {
 			return err
 		}
@@ -64,7 +64,7 @@ func NetworkSetDevMAC(devName string, mac string) error {
 
 	// Only try and change the MAC if the requested mac is different to current one.
 	if curMac != mac {
-		_, err := shared.RunCommand("ip", "link", "set", "dev", devName, "address", mac)
+		err := network.InterfaceSetMAC(devName, mac)
 		if err != nil {
 			return err
 		}
@@ -162,7 +162,7 @@ func networkRestorePhysicalNic(hostName string, volatile map[string]string) erro
 	}
 
 	// Bring the interface down, as this is sometimes needed to change settings on the nic.
-	_, err := shared.RunCommand("ip", "link", "set", "dev", hostName, "down")
+	err := network.InterfaceBringDown(hostName)
 	if err != nil {
 		return fmt.Errorf("Failed to bring down \"%s\": %v", hostName, err)
 	}
@@ -203,7 +203,7 @@ func networkCreateVethPair(hostName string, m deviceConfig.Device) (string, erro
 		return "", fmt.Errorf("Failed to create the veth interfaces %s and %s: %v", hostName, peerName, err)
 	}
 
-	_, err = shared.RunCommand("ip", "link", "set", "dev", hostName, "up")
+	err = network.InterfaceBringUp(hostName)
 	if err != nil {
 		network.InterfaceRemove(hostName)
 		return "", fmt.Errorf("Failed to bring up the veth interface %s: %v", hostName, err)
@@ -211,7 +211,7 @@ func networkCreateVethPair(hostName string, m deviceConfig.Device) (string, erro
 
 	// Set the MAC address on peer.
 	if m["hwaddr"] != "" {
-		_, err := shared.RunCommand("ip", "link", "set", "dev", peerName, "address", m["hwaddr"])
+		err := network.InterfaceSetMAC(peerName, m["hwaddr"])
 		if err != nil {
 			network.InterfaceRemove(peerName)
 			return "", fmt.Errorf("Failed to set the MAC address: %v", err)
@@ -268,7 +268,7 @@ func networkCreateTap(hostName string, m deviceConfig.Device) error {
 	revert := revert.New()
 	defer revert.Fail()
 
-	_, err = shared.RunCommand("ip", "link", "set", "dev", hostName, "up")
+	err = network.InterfaceBringUp(hostName)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to bring up the tap interface %s", hostName)
 	}

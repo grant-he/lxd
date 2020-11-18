@@ -877,7 +877,7 @@ func (n *ovn) startUplinkPortBridge(uplinkNet Network) error {
 				return errors.Wrapf(err, "Failed to create the uplink veth interfaces %q and %q", vars.uplinkEnd, vars.ovsEnd)
 			}
 
-			revert.Add(func() { shared.RunCommand("ip", "link", "delete", vars.uplinkEnd) })
+			revert.Add(func() { _ = InterfaceRemove(vars.uplinkEnd) })
 		}
 
 		// Ensure that the veth interfaces inherit the uplink bridge's MTU (which the OVS bridge also inherits).
@@ -906,13 +906,17 @@ func (n *ovn) startUplinkPortBridge(uplinkNet Network) error {
 		}
 
 		// Connect uplink end of veth pair to uplink bridge and bring up.
-		_, err = shared.RunCommand("ip", "link", "set", "master", uplinkNet.Name(), "dev", vars.uplinkEnd, "up")
+		err = InterfaceSetMaster(vars.uplinkEnd, uplinkNet.Name())
 		if err != nil {
 			return errors.Wrapf(err, "Failed to connect uplink veth interface %q to uplink bridge %q", vars.uplinkEnd, uplinkNet.Name())
 		}
+		err = InterfaceBringUp(vars.uplinkEnd)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to bring up uplink veth interface %q", vars.uplinkEnd)
+		}
 
 		// Ensure uplink OVS end veth interface is up.
-		_, err = shared.RunCommand("ip", "link", "set", "dev", vars.ovsEnd, "up")
+		err = InterfaceBringUp(vars.ovsEnd)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to bring up uplink veth interface %q", vars.ovsEnd)
 		}
@@ -1017,7 +1021,7 @@ func (n *ovn) startUplinkPortPhysical(uplinkNet Network) error {
 	}
 
 	// Bring uplink interface up.
-	_, err = shared.RunCommand("ip", "link", "set", uplinkHostName, "up")
+	err = InterfaceBringUp(uplinkHostName)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to bring up uplink interface %q", uplinkHostName)
 	}
@@ -1117,14 +1121,14 @@ func (n *ovn) deleteUplinkPortBridge(uplinkNet Network) error {
 		// Remove the veth interfaces if they exist.
 		if removeVeths {
 			if InterfaceExists(vars.uplinkEnd) {
-				_, err := shared.RunCommand("ip", "link", "delete", "dev", vars.uplinkEnd)
+				err := InterfaceRemove(vars.uplinkEnd)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to delete the uplink veth interface %q", vars.uplinkEnd)
 				}
 			}
 
 			if InterfaceExists(vars.ovsEnd) {
-				_, err := shared.RunCommand("ip", "link", "delete", "dev", vars.ovsEnd)
+				err := InterfaceRemove(vars.ovsEnd)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to delete the uplink veth interface %q", vars.ovsEnd)
 				}
@@ -1184,7 +1188,7 @@ func (n *ovn) deleteUplinkPortPhysical(uplinkNet Network) error {
 		uplinkConfig := uplinkNet.Config()
 		uplinkDev := GetHostDevice(uplinkConfig["parent"], uplinkConfig["vlan"])
 		if InterfaceExists(uplinkDev) {
-			_, err := shared.RunCommand("ip", "link", "set", uplinkDev, "down")
+			err := InterfaceBringDown(uplinkDev)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to bring down uplink interface %q", uplinkDev)
 			}

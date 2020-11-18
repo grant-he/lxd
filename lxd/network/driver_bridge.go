@@ -548,7 +548,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 	// Cleanup any existing tunnel device.
 	for _, iface := range ifaces {
 		if strings.HasPrefix(iface.Name, fmt.Sprintf("%s-", n.name)) {
-			_, err = shared.RunCommand("ip", "link", "del", "dev", iface.Name)
+			err = InterfaceRemove(iface.Name)
 			if err != nil {
 				return err
 			}
@@ -573,7 +573,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 	if mtu != "" && n.config["bridge.driver"] != "openvswitch" {
 		_, err = shared.RunCommand("ip", "link", "add", "dev", fmt.Sprintf("%s-mtu", n.name), "mtu", mtu, "type", "dummy")
 		if err == nil {
-			_, err = shared.RunCommand("ip", "link", "set", "dev", fmt.Sprintf("%s-mtu", n.name), "up")
+			err = InterfaceBringUp(fmt.Sprintf("%s-mtu", n.name))
 			if err == nil {
 				AttachInterface(n.name, fmt.Sprintf("%s-mtu", n.name))
 			}
@@ -585,7 +585,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		mtu = "1500"
 	}
 
-	_, err = shared.RunCommand("ip", "link", "set", "dev", n.name, "mtu", mtu)
+	err = InterfaceSetMTU(n.name, mtu)
 	if err != nil {
 		return err
 	}
@@ -635,7 +635,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 
 	// Set the MAC address on the bridge interface if specified.
 	if hwAddr != "" {
-		_, err = shared.RunCommand("ip", "link", "set", "dev", n.name, "address", hwAddr)
+		err = InterfaceSetMAC(n.name, hwAddr)
 		if err != nil {
 			return err
 		}
@@ -656,7 +656,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 	}
 
 	// Bring it up.
-	_, err = shared.RunCommand("ip", "link", "set", "dev", n.name, "up")
+	err = InterfaceBringUp(n.name)
 	if err != nil {
 		return err
 	}
@@ -1092,13 +1092,13 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 			if fanMtu != mtu {
 				mtu = fanMtu
 				if n.config["bridge.driver"] != "openvswitch" {
-					_, err = shared.RunCommand("ip", "link", "set", "dev", fmt.Sprintf("%s-mtu", n.name), "mtu", mtu)
+					err = InterfaceSetMTU(fmt.Sprintf("%s-mtu", n.name), mtu)
 					if err != nil {
 						return err
 					}
 				}
 
-				_, err = shared.RunCommand("ip", "link", "set", "dev", n.name, "mtu", mtu)
+				err = InterfaceSetMTU(n.name, mtu)
 				if err != nil {
 					return err
 				}
@@ -1137,7 +1137,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 				return err
 			}
 
-			_, err = shared.RunCommand("ip", "link", "set", "dev", "tunl0", "up")
+			err = InterfaceBringUp("tunl0")
 			if err != nil {
 				return err
 			}
@@ -1162,12 +1162,16 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 				return err
 			}
 
-			_, err = shared.RunCommand("ip", "link", "set", "dev", tunName, "mtu", mtu, "up")
+			err = InterfaceSetMTU(tunName, mtu)
+			if err != nil {
+				return err
+			}
+			err = InterfaceBringUp(tunName)
 			if err != nil {
 				return err
 			}
 
-			_, err = shared.RunCommand("ip", "link", "set", "dev", n.name, "up")
+			err = InterfaceBringUp(n.name)
 			if err != nil {
 				return err
 			}
@@ -1285,12 +1289,16 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 			return err
 		}
 
-		_, err = shared.RunCommand("ip", "link", "set", "dev", tunName, "mtu", mtu, "up")
+		err = InterfaceSetMTU(tunName, mtu)
+		if err != nil {
+			return err
+		}
+		err = InterfaceBringUp(tunName)
 		if err != nil {
 			return err
 		}
 
-		_, err = shared.RunCommand("ip", "link", "set", "dev", n.name, "up")
+		err = InterfaceBringUp(n.name)
 		if err != nil {
 			return err
 		}
@@ -1457,7 +1465,7 @@ func (n *bridge) Stop() error {
 			return err
 		}
 	} else {
-		_, err := shared.RunCommand("ip", "link", "del", "dev", n.name)
+		err := InterfaceRemove(n.name)
 		if err != nil {
 			return err
 		}
@@ -1498,7 +1506,7 @@ func (n *bridge) Stop() error {
 	// Cleanup any existing tunnel device
 	for _, iface := range ifaces {
 		if strings.HasPrefix(iface.Name, fmt.Sprintf("%s-", n.name)) {
-			_, err = shared.RunCommand("ip", "link", "del", "dev", iface.Name)
+			err = InterfaceRemove(iface.Name)
 			if err != nil {
 				return err
 			}

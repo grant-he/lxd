@@ -1029,7 +1029,7 @@ func VLANInterfaceCreate(parent string, vlanDevice string, vlanID string) (bool,
 	}
 
 	// Bring the parent interface up so we can add a vlan to it.
-	_, err := shared.RunCommand("ip", "link", "set", "dev", parent, "up")
+	err := InterfaceBringUp(parent)
 	if err != nil {
 		return false, errors.Wrapf(err, "Failed to bring up parent %q", parent)
 	}
@@ -1047,6 +1047,9 @@ func VLANInterfaceCreate(parent string, vlanDevice string, vlanID string) (bool,
 	return true, nil
 }
 
+//// Network interface operations ////
+// TODO: convert these to use netlink instead of ip, per #7871
+
 // InterfaceRemove removes a network interface by name.
 func InterfaceRemove(nic string) error {
 	_, err := shared.RunCommand("ip", "link", "del", "dev", nic)
@@ -1055,11 +1058,41 @@ func InterfaceRemove(nic string) error {
 
 // InterfaceExists returns true if network interface exists.
 func InterfaceExists(nic string) bool {
-	if shared.PathExists(fmt.Sprintf("/sys/class/net/%s", nic)) {
-		return true
+	return shared.PathExists(fmt.Sprintf("/sys/class/net/%s", nic))
+}
+
+// InterfaceRename changes the name of a network interface.
+func InterfaceRename(nic string, name string) error {
+	_, err := shared.RunCommand("ip", "link", "set", "dev", nic, "name", name)
+	return err
+}
+
+// InterfaceBringUp enables a network interface by name (as by `ip link set <name> up`).
+func InterfaceBringUp(nic string) error {
+	_, err := shared.RunCommand("ip", "link", "set", "dev", nic, "up")
+	return err
+}
+
+// InterfaceBringDown disables a network interface by name (as by `ip link set <name> down`).
+func InterfaceBringDown(nic string) error {
+	_, err := shared.RunCommand("ip", "link", "set", "dev", nic, "down")
+	return err
+}
+
+// InterfaceSetNamespace sets the network namespace of a network interface.
+func InterfaceSetNamespace(nic string, netNS string) error {
+	_, err := shared.RunCommand("ip", "link", "set", "dev", nic, "netns", netNS)
+	return err
+}
+
+// InterfaceSetMAC sets the hardware address of a network interface.
+func InterfaceSetMAC(nic string, mac string) error {
+	if mac != "" {
+		_, err := shared.RunCommand("ip", "link", "set", "dev", nic, "address", mac)
+		return err
 	}
 
-	return false
+	return nil
 }
 
 // InterfaceSetMTU sets the MTU of a network interface.
@@ -1072,6 +1105,24 @@ func InterfaceSetMTU(nic string, mtu string) error {
 	}
 
 	return nil
+}
+
+// InterfaceSetMaster sets the master interface of a network interface.
+func InterfaceSetMaster(nic string, master string) error {
+	_, err := shared.RunCommand("ip", "link", "set", "dev", nic, "master", master)
+	return err
+}
+
+// InterfaceSetNoMaster detaches a network interface from its master.
+func InterfaceSetNoMaster(nic string) error {
+	_, err := shared.RunCommand("ip", "link", "set", "dev", nic, "nomaster")
+	return err
+}
+
+// InterfaceFlushAddresses removes all addresses from a network interface.
+func InterfaceFlushAddresses(nic string) error {
+	_, err := shared.RunCommand("ip", "address", "flush", "dev", nic)
+	return err
 }
 
 // SubnetContains returns true if outerSubnet contains innerSubnet.

@@ -152,7 +152,7 @@ func (d *nicSRIOV) Start() (*deviceConfig.RunConfig, error) {
 	if d.inst.Type() == instancetype.Container {
 		// Set the MAC address.
 		if d.config["hwaddr"] != "" {
-			_, err := shared.RunCommand("ip", "link", "set", "dev", saveData["host_name"], "address", d.config["hwaddr"])
+			err := network.InterfaceSetMAC(saveData["host_name"], d.config["hwaddr"])
 			if err != nil {
 				return nil, fmt.Errorf("Failed to set the MAC address: %s", err)
 			}
@@ -167,7 +167,7 @@ func (d *nicSRIOV) Start() (*deviceConfig.RunConfig, error) {
 		}
 
 		// Bring the interface up.
-		_, err = shared.RunCommand("ip", "link", "set", "dev", saveData["host_name"], "up")
+		err = network.InterfaceBringUp(saveData["host_name"])
 		if err != nil {
 			return nil, fmt.Errorf("Failed to bring up the interface: %v", err)
 		}
@@ -279,7 +279,7 @@ func (d *nicSRIOV) findFreeVirtualFunction(reservedDevices map[string]struct{}) 
 	}
 
 	// Ensure parent is up (needed for Intel at least).
-	_, err = shared.RunCommand("ip", "link", "set", "dev", d.config["parent"], "up")
+	err = network.InterfaceBringUp(d.config["parent"])
 	if err != nil {
 		return "", 0, err
 	}

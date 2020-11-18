@@ -113,7 +113,7 @@ func (d *nicPhysical) Start() (*deviceConfig.RunConfig, error) {
 
 		// Set the MAC address.
 		if d.config["hwaddr"] != "" {
-			_, err := shared.RunCommand("ip", "link", "set", "dev", saveData["host_name"], "address", d.config["hwaddr"])
+			err := network.InterfaceSetMAC(saveData["host_name"], d.config["hwaddr"])
 			if err != nil {
 				return nil, fmt.Errorf("Failed to set the MAC address: %s", err)
 			}

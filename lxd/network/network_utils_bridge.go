@@ -59,7 +59,7 @@ func IsNativeBridge(bridgeName string) bool {
 // AttachInterface attaches an interface to a bridge.
 func AttachInterface(bridgeName string, devName string) error {
 	if IsNativeBridge(bridgeName) {
-		_, err := shared.RunCommand("ip", "link", "set", "dev", devName, "master", bridgeName)
+		err := InterfaceSetMaster(devName, bridgeName)
 		if err != nil {
 			return err
 		}
@@ -77,7 +77,7 @@ func AttachInterface(bridgeName string, devName string) error {
 // DetachInterface detaches an interface from a bridge.
 func DetachInterface(bridgeName string, devName string) error {
 	if IsNativeBridge(bridgeName) {
-		_, err := shared.RunCommand("ip", "link", "set", "dev", devName, "nomaster")
+		err := InterfaceSetNoMaster(devName)
 		if err != nil {
 			return err
 		}
