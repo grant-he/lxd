@@ -456,7 +456,7 @@ func (d *nicSRIOV) setupSriovParent(vfDevice string, vfID int, volatile map[stri
 		}
 
 		// Now that MAC is set on VF, we can enable spoof checking.
-		err = InterfaceSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], "on")
+		err = VFSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], "on")
 		if err != nil {
 			return vfPCIDev, err
 		}
@@ -467,7 +467,7 @@ func (d *nicSRIOV) setupSriovParent(vfDevice string, vfID int, volatile map[stri
 		VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], "00:00:00:00:00:00")
 
 		// Ensure spoof checking is disabled if not enabled in instance.
-		err = InterfaceSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], "off")
+		err = VFSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], "off")
 		if err != nil {
 			return vfPCIDev, err
 		}
@@ -725,7 +725,7 @@ func (d *nicSRIOV) restoreSriovParent(volatile map[string]string) error {
 			mode = "on"
 		}
 
-		err := InterfaceSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], mode)
+		err := VFSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], mode)
 		if err != nil {
 			return err
 		}

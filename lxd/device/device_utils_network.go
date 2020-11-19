@@ -361,7 +361,7 @@ func networkSetVethRoutes(s *state.State, m deviceConfig.Device) error {
 	if m["ipv4.routes"] != "" {
 		for _, route := range strings.Split(m["ipv4.routes"], ",") {
 			route = strings.TrimSpace(route)
-			_, err := shared.RunCommand("ip", "-4", "route", "add", route, "dev", routeDev, "proto", "boot")
+			err := IPv4AddRoute(route, routeDev)
 			if err != nil {
 				return err
 			}
@@ -372,7 +372,7 @@ func networkSetVethRoutes(s *state.State, m deviceConfig.Device) error {
 	if m["ipv6.routes"] != "" {
 		for _, route := range strings.Split(m["ipv6.routes"], ",") {
 			route = strings.TrimSpace(route)
-			_, err := shared.RunCommand("ip", "-6", "route", "add", route, "dev", routeDev, "proto", "boot")
+			err := IPv6AddRoute(route, routeDev)
 			if err != nil {
 				return err
 			}

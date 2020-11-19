@@ -1125,6 +1125,18 @@ func InterfaceFlushAddresses(nic string) error {
 	return err
 }
 
+// IPv4AddRoute adds an IPv4 route
+func IPv4AddRoute(route string, routeDev string) error {
+	_, err := shared.RunCommand("ip", "-4", "route", "add", route, "dev", routeDev, "proto", "boot")
+	return err
+}
+
+// IPv6AddRoute adds an IPv6 route
+func IPv6AddRoute(route string, routeDev string) error {
+	_, err := shared.RunCommand("ip", "-6", "route", "add", route, "dev", routeDev, "proto", "boot")
+	return err
+}
+
 // SubnetContains returns true if outerSubnet contains innerSubnet.
 func SubnetContains(outerSubnet *net.IPNet, innerSubnet *net.IPNet) bool {
 	if outerSubnet == nil || innerSubnet == nil {
