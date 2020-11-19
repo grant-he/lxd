@@ -433,7 +433,7 @@ func (d *nicSRIOV) setupSriovParent(vfDevice string, vfID int, volatile map[stri
 
 	// Setup VF VLAN if specified.
 	if d.config["vlan"] != "" {
-		_, err := shared.TryRunCommand("ip", "link", "set", "dev", d.config["parent"], "vf", volatile["last_state.vf.id"], "vlan", d.config["vlan"])
+		err := VFSetVLAN(d.config["parent"], volatile["last_state.vf.id"], d.config["vlan"])
 		if err != nil {
 			return vfPCIDev, err
 		}
@@ -450,13 +450,13 @@ func (d *nicSRIOV) setupSriovParent(vfDevice string, vfID int, volatile map[stri
 		}
 
 		// Set MAC on VF (this combined with spoof checking prevents any other MAC being used).
-		_, err = shared.TryRunCommand("ip", "link", "set", "dev", d.config["parent"], "vf", volatile["last_state.vf.id"], "mac", mac)
+		err = VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], mac)
 		if err != nil {
 			return vfPCIDev, err
 		}
 
 		// Now that MAC is set on VF, we can enable spoof checking.
-		_, err = shared.TryRunCommand("ip", "link", "set", "dev", d.config["parent"], "vf", volatile["last_state.vf.id"], "spoofchk", "on")
+		err = InterfaceSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], "on")
 		if err != nil {
 			return vfPCIDev, err
 		}
@@ -464,10 +464,10 @@ func (d *nicSRIOV) setupSriovParent(vfDevice string, vfID int, volatile map[stri
 		// Try to reset VF to ensure no previous MAC restriction exists, as some devices require this
 		// before being able to set a new VF MAC or disable spoofchecking. However some devices don't
 		// allow it so ignore failures.
-		shared.TryRunCommand("ip", "link", "set", "dev", d.config["parent"], "vf", volatile["last_state.vf.id"], "mac", "00:00:00:00:00:00")
+		VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], "00:00:00:00:00:00")
 
 		// Ensure spoof checking is disabled if not enabled in instance.
-		_, err = shared.TryRunCommand("ip", "link", "set", "dev", d.config["parent"], "vf", volatile["last_state.vf.id"], "spoofchk", "off")
+		err = InterfaceSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], "off")
 		if err != nil {
 			return vfPCIDev, err
 		}
@@ -480,7 +480,7 @@ func (d *nicSRIOV) setupSriovParent(vfDevice string, vfID int, volatile map[stri
 				mac = volatile["last_state.hwaddr"]
 			}
 
-			_, err = shared.TryRunCommand("ip", "link", "set", "dev", d.config["parent"], "vf", volatile["last_state.vf.id"], "mac", mac)
+			err = VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], mac)
 			if err != nil {
 				return vfPCIDev, err
 			}
@@ -711,7 +711,7 @@ func (d *nicSRIOV) restoreSriovParent(volatile map[string]string) error {
 
 	// Reset VF VLAN if specified
 	if volatile["last_state.vf.vlan"] != "" {
-		_, err := shared.TryRunCommand("ip", "link", "set", "dev", d.config["parent"], "vf", volatile["last_state.vf.id"], "vlan", volatile["last_state.vf.vlan"])
+		err := VFSetVLAN(d.config["parent"], volatile["last_state.vf.id"], volatile["last_state.vf.vlan"])
 		if err != nil {
 			return err
 		}
@@ -725,7 +725,7 @@ func (d *nicSRIOV) restoreSriovParent(volatile map[string]string) error {
 			mode = "on"
 		}
 
-		_, err := shared.TryRunCommand("ip", "link", "set", "dev", d.config["parent"], "vf", volatile["last_state.vf.id"], "spoofchk", mode)
+		err := InterfaceSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], mode)
 		if err != nil {
 			return err
 		}
@@ -733,7 +733,7 @@ func (d *nicSRIOV) restoreSriovParent(volatile map[string]string) error {
 
 	// Reset VF MAC specified if specified.
 	if volatile["last_state.vf.hwaddr"] != "" {
-		_, err := shared.TryRunCommand("ip", "link", "set", "dev", d.config["parent"], "vf", volatile["last_state.vf.id"], "mac", volatile["last_state.vf.hwaddr"])
+		err = VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], volatile["last_state.vf.hwaddr"])
 		if err != nil {
 			return err
 		}
