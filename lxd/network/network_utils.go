@@ -1137,6 +1137,17 @@ func IPv6AddRoute(route string, routeDev string) error {
 	return err
 }
 
+func IPv4FlushRoute(route string, routeDev string) error {
+	_, err := shared.RunCommand("ip", "-4", "route", "flush", route, "dev", routeDev, "proto", "boot")
+	return err
+}
+
+func IPv6FlushRoute(route string, routeDev string) error {
+	_, err := shared.RunCommand("ip", "-6", "route", "flush", route, "dev", routeDev, "proto", "boot")
+	return err
+}
+
+
 // SubnetContains returns true if outerSubnet contains innerSubnet.
 func SubnetContains(outerSubnet *net.IPNet, innerSubnet *net.IPNet) bool {
 	if outerSubnet == nil || innerSubnet == nil {
