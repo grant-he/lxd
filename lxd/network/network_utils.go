@@ -1125,6 +1125,18 @@ func InterfaceFlushAddresses(nic string) error {
 	return err
 }
 
+// IPv4AddAddress adds address to device
+func IPv4AddAddress(name string, address string) error {
+	_, err := shared.RunCommand("ip", "-4", "addr", "add", "dev", name, address)
+	return err
+}
+
+// IPv6AddAddress adds address to device
+func IPv6AddAddress(name string, address string) error {
+	_, err := shared.RunCommand("ip", "-6", "addr", "add", "dev", name, address)
+	return err
+}
+
 // IPv4AddRoute adds an IPv4 route
 func IPv4AddRoute(route string, routeDev string) error {
 	_, err := shared.RunCommand("ip", "-4", "route", "add", route, "dev", routeDev, "proto", "boot")

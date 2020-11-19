@@ -833,7 +833,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		}
 
 		// Add the address.
-		_, err = shared.RunCommand("ip", "-4", "addr", "add", "dev", n.name, n.config["ipv4.address"])
+		err = IPv4AddAddress(n.name, n.config["ipv4.address"])
 		if err != nil {
 			return err
 		}
@@ -1001,7 +1001,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		}
 
 		// Add the address.
-		_, err = shared.RunCommand("ip", "-6", "addr", "add", "dev", n.name, n.config["ipv6.address"])
+		err = IPv6AddAddress(n.name, n.config["ipv6.address"])
 		if err != nil {
 			return err
 		}
@@ -1112,7 +1112,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		}
 
 		// Add the address.
-		_, err = shared.RunCommand("ip", "-4", "addr", "add", "dev", n.name, fanAddress)
+		err = IPv4AddAddress(n.name, fanAddress)
 		if err != nil {
 			return err
 		}

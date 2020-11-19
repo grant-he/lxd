@@ -343,7 +343,7 @@ func (d *nicRouted) postStart() error {
 		// Add dummy link-local gateway IPs to the host end of the veth pair. This ensures that
 		// liveness detection of the gateways inside the instance work and ensure that traffic
 		// doesn't periodically halt whilst ARP is re-detected.
-		_, err := shared.RunCommand("ip", "-4", "addr", "add", fmt.Sprintf("%s/32", d.ipv4HostAddress()), "dev", d.config["host_name"])
+		err := IPv4AddAddress(d.config["host_name"], fmt.Sprintf("%s/32", d.ipv4HostAddress()))
 		if err != nil {
 			return err
 		}
@@ -367,7 +367,7 @@ func (d *nicRouted) postStart() error {
 		// Add dummy link-local gateway IPs to the host end of the veth pair. This ensures that
 		// liveness detection of the gateways inside the instance work and ensure that traffic
 		// doesn't periodically halt whilst NDP is re-detected.
-		_, err := shared.RunCommand("ip", "-6", "addr", "add", fmt.Sprintf("%s/128", d.ipv6HostAddress()), "dev", d.config["host_name"])
+		err := IPv6AddAddress(d.config["host_name"], fmt.Sprintf("%s/128", d.ipv6HostAddress()))
 		if err != nil {
 			return err
 		}
