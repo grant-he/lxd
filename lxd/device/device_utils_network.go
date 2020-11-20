@@ -361,7 +361,7 @@ func networkSetVethRoutes(s *state.State, m deviceConfig.Device) error {
 	if m["ipv4.routes"] != "" {
 		for _, route := range strings.Split(m["ipv4.routes"], ",") {
 			route = strings.TrimSpace(route)
-			err := IPv4AddRoute(route, routeDev)
+			err := IPv4AddRoute(route, routeDev, "", "boot")
 			if err != nil {
 				return err
 			}
@@ -372,7 +372,7 @@ func networkSetVethRoutes(s *state.State, m deviceConfig.Device) error {
 	if m["ipv6.routes"] != "" {
 		for _, route := range strings.Split(m["ipv6.routes"], ",") {
 			route = strings.TrimSpace(route)
-			err := IPv6AddRoute(route, routeDev)
+			err := IPv6AddRoute(route, routeDev, "", "boot")
 			if err != nil {
 				return err
 			}
@@ -414,7 +414,7 @@ func networkRemoveVethRoutes(s *state.State, m deviceConfig.Device) {
 	if m["ipv4.routes"] != "" {
 		for _, route := range strings.Split(m["ipv4.routes"], ",") {
 			route = strings.TrimSpace(route)
-			_, err := shared.RunCommand("ip", "-4", "route", "flush", route, "dev", routeDev, "proto", "boot")
+			err := IPv4FlushRoute(route, routeDev, "boot")
 			if err != nil {
 				logger.Errorf("Failed to remove static route: %s to %s: %s", route, routeDev, err)
 			}
@@ -425,7 +425,7 @@ func networkRemoveVethRoutes(s *state.State, m deviceConfig.Device) {
 	if m["ipv6.routes"] != "" {
 		for _, route := range strings.Split(m["ipv6.routes"], ",") {
 			route = strings.TrimSpace(route)
-			_, err := shared.RunCommand("ip", "-6", "route", "flush", route, "dev", routeDev, "proto", "boot")
+			err := IPv6FlushRoute(route, routeDev, "boot")
 			if err != nil {
 				logger.Errorf("Failed to remove static route: %s to %s: %s", route, routeDev, err)
 			}

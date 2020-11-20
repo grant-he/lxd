@@ -355,7 +355,7 @@ func (d *nicRouted) postStart() error {
 		if d.config["ipv4.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv4.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				_, err := shared.RunCommand("ip", "-4", "route", "add", "table", d.config["ipv4.host_table"], fmt.Sprintf("%s/32", addr), "dev", d.config["host_name"])
+				err := IPv4AddRoute(fmt.Sprintf("%s/32", addr), d.config["host_name"], d.config["ipv4.host_table"], "")
 				if err != nil {
 					return err
 				}
@@ -379,7 +379,7 @@ func (d *nicRouted) postStart() error {
 		if d.config["ipv6.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv6.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				_, err := shared.RunCommand("ip", "-6", "route", "add", "table", d.config["ipv6.host_table"], fmt.Sprintf("%s/128", addr), "dev", d.config["host_name"])
+				err := IPv6AddRoute(fmt.Sprintf("%s/128", addr), d.config["host_name"], d.config["ipv6.host_table"], "")
 				if err != nil {
 					return err
 				}

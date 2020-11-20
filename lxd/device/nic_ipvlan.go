@@ -354,7 +354,7 @@ func (d *nicIPVLAN) postStart() error {
 		if d.config["ipv4.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv4.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				_, err := shared.RunCommand("ip", "-4", "route", "add", "table", d.config["ipv4.host_table"], fmt.Sprintf("%s/32", addr), "dev", "lo")
+				err := IPv4AddRoute(fmt.Sprintf("%s/32", addr), "lo", d.config["ipv4.host_table"], "")
 				if err != nil {
 					return err
 				}
@@ -368,7 +368,7 @@ func (d *nicIPVLAN) postStart() error {
 		if d.config["ipv6.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv6.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				_, err := shared.RunCommand("ip", "-6", "route", "add", "table", d.config["ipv6.host_table"], fmt.Sprintf("%s/128", addr), "dev", "lo")
+				err := IPv6AddRoute(fmt.Sprintf("%s/128", addr), "lo", d.config["ipv6.host_table"], "")
 				if err != nil {
 					return err
 				}
@@ -401,7 +401,7 @@ func (d *nicIPVLAN) postStop() error {
 		if d.config["ipv4.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv4.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				_, err := shared.RunCommand("ip", "-4", "route", "delete", "table", d.config["ipv4.host_table"], fmt.Sprintf("%s/32", addr), "dev", "lo")
+				err := IPv4DelRoute(fmt.Sprintf("%s/32", addr), "lo", d.config["ipv4.host_table"])
 				if err != nil {
 					return err
 				}
@@ -414,7 +414,7 @@ func (d *nicIPVLAN) postStop() error {
 		if d.config["ipv6.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv6.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				_, err := shared.RunCommand("ip", "-6", "route", "delete", "table", d.config["ipv6.host_table"], fmt.Sprintf("%s/128", addr), "dev", "lo")
+				err := IPv6DelRoute(fmt.Sprintf("%s/128", addr), "lo", d.config["ipv6.host_table"])
 				if err != nil {
 					return err
 				}

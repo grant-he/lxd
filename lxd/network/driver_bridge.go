@@ -710,12 +710,12 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 	}
 
 	// Flush all IPv4 addresses and routes.
-	_, err = shared.RunCommand("ip", "-4", "addr", "flush", "dev", n.name, "scope", "global")
+	err = IPv4FlushAddresses(n.name, "global")
 	if err != nil {
 		return err
 	}
 
-	_, err = shared.RunCommand("ip", "-4", "route", "flush", "dev", n.name, "proto", "static")
+	err = IPv4FlushRoute("", n.name, "static")
 	if err != nil {
 		return err
 	}
@@ -863,7 +863,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		if n.config["ipv4.routes"] != "" {
 			for _, route := range strings.Split(n.config["ipv4.routes"], ",") {
 				route = strings.TrimSpace(route)
-				_, err = shared.RunCommand("ip", "-4", "route", "add", "dev", n.name, route, "proto", "static")
+				_, err = IPv4AddRoute(route, n.name, "", "static")
 				if err != nil {
 					return err
 				}
@@ -890,12 +890,12 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 	}
 
 	// Flush all IPv6 addresses and routes.
-	_, err = shared.RunCommand("ip", "-6", "addr", "flush", "dev", n.name, "scope", "global")
+	err = IPv6FlushAddresses(n.name, "global")
 	if err != nil {
 		return err
 	}
 
-	_, err = shared.RunCommand("ip", "-6", "route", "flush", "dev", n.name, "proto", "static")
+	_, err = IPv6FlushRoute("", n.name, "static")
 	if err != nil {
 		return err
 	}
@@ -1030,7 +1030,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		if n.config["ipv6.routes"] != "" {
 			for _, route := range strings.Split(n.config["ipv6.routes"], ",") {
 				route = strings.TrimSpace(route)
-				_, err = shared.RunCommand("ip", "-6", "route", "add", "dev", n.name, route, "proto", "static")
+				err = IPv6AddRoute(route, n.name, "", "static")
 				if err != nil {
 					return err
 				}
@@ -1132,7 +1132,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 
 		// Setup the tunnel.
 		if n.config["fan.type"] == "ipip" {
-			_, err = shared.RunCommand("ip", "-4", "route", "flush", "dev", "tunl0")
+			err = IPv4FlushRoute("", "tunl0", "")
 			if err != nil {
 				return err
 			}
