@@ -1050,6 +1050,16 @@ func VLANInterfaceCreate(parent string, vlanDevice string, vlanID string) (bool,
 //// Network interface operations ////
 // TODO: convert these to use netlink instead of ip, per #7871
 
+// InterfaceAddRoute adds a route to device
+func InterfaceAddRoute(route string, dev string, src string) error {
+	cmd := []string{"ip", "route", "add", route, "dev", dev}
+	if src != "" {
+		cmd = append(cmd, []string{"src", src})
+	}
+	_, err := shared.RunCommand(cmd[0], cmd[1:]...)
+	return err
+}
+
 // InterfaceRemove removes a network interface by name.
 func InterfaceRemove(nic string) error {
 	_, err := shared.RunCommand("ip", "link", "del", "dev", nic)
