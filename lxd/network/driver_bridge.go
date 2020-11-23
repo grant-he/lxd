@@ -863,7 +863,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		if n.config["ipv4.routes"] != "" {
 			for _, route := range strings.Split(n.config["ipv4.routes"], ",") {
 				route = strings.TrimSpace(route)
-				_, err = IPv4AddRoute(route, n.name, "", "static")
+				err = IPv4AddRoute(route, n.name, "", "static")
 				if err != nil {
 					return err
 				}
@@ -895,7 +895,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		return err
 	}
 
-	_, err = IPv6FlushRoute("", n.name, "static")
+	err = IPv6FlushRoute("", n.name, "static")
 	if err != nil {
 		return err
 	}

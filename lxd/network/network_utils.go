@@ -1054,7 +1054,7 @@ func VLANInterfaceCreate(parent string, vlanDevice string, vlanID string) (bool,
 func InterfaceAddRoute(route string, dev string, src string) error {
 	cmd := []string{"ip", "route", "add", route, "dev", dev}
 	if src != "" {
-		cmd = append(cmd, []string{"src", src})
+		cmd = append(cmd, []string{"src", src}...)
 	}
 	_, err := shared.RunCommand(cmd[0], cmd[1:]...)
 	return err
@@ -1151,10 +1151,10 @@ func IPv6AddAddress(name string, address string) error {
 func IPv4AddRoute(route string, dev string, tableID string, rtProto string) error {
 	cmd := []string{"ip", "-4", "route", "add", route, "dev", dev}
 	if tableID != "" {
-		cmd = append(cmd, []string{"table", tableID})
+		cmd = append(cmd, []string{"table", tableID}...)
 	}
-	if rtProtoID != "" {
-		cmd = append(cmd, []string{"proto", rtProto})
+	if rtProto != "" {
+		cmd = append(cmd, []string{"proto", rtProto}...)
 	}
 	_, err := shared.RunCommand(cmd[0], cmd[1:]...)
 	return err
@@ -1164,10 +1164,10 @@ func IPv4AddRoute(route string, dev string, tableID string, rtProto string) erro
 func IPv6AddRoute(route string, dev string, tableID string, rtProto string) error {
 	cmd := []string{"ip", "-6", "route", "add", route, "dev", dev}
 	if tableID != "" {
-		cmd = append(cmd, []string{"table", tableID})
+		cmd = append(cmd, []string{"table", tableID}...)
 	}
-	if rtProtoID != "" {
-		cmd = append(cmd, []string{"proto", rtProto})
+	if rtProto != "" {
+		cmd = append(cmd, []string{"proto", rtProto}...)
 	}
 	_, err := shared.RunCommand(cmd[0], cmd[1:]...)
 	return err
@@ -1177,7 +1177,7 @@ func IPv6AddRoute(route string, dev string, tableID string, rtProto string) erro
 func IPv4DelRoute(route string, dev string, tableID string) error {
 	cmd := []string{"ip", "-6", "route", "delete", route, "dev", dev}
 	if tableID != "" {
-		cmd = append(cmd, []string{"table", tableID})
+		cmd = append(cmd, []string{"table", tableID}...)
 	}
 	_, err := shared.RunCommand(cmd[0], cmd[1:]...)
 	return err
@@ -1187,7 +1187,7 @@ func IPv4DelRoute(route string, dev string, tableID string) error {
 func IPv6DelRoute(route string, dev string, tableID string) error {
 	cmd := []string{"ip", "-6", "route", "delete", route, "dev", dev}
 	if tableID != "" {
-		cmd = append(cmd, []string{"table", tableID})
+		cmd = append(cmd, []string{"table", tableID}...)
 	}
 	_, err := shared.RunCommand(cmd[0], cmd[1:]...)
 	return err
@@ -1197,17 +1197,17 @@ func IPv6DelRoute(route string, dev string, tableID string) error {
 func IPv4FlushAddresses(dev string, scope string) error {
 	cmd := []string{"ip", "-4", "addr", "flush", "dev", dev}
 	if scope != "" {
-		cmd = append(cmd, []string{"scope", scope})
+		cmd = append(cmd, []string{"scope", scope}...)
 	}
 	_, err := shared.RunCommand(cmd[0], cmd[1:]...)
 	return err
 }
 
 // IPv6FlushAddresses flushes all IPv6 address from device
-func IPv4FlushAddresses(dev string, scope string) error {
+func IPv6FlushAddresses(dev string, scope string) error {
 	cmd := []string{"ip", "-6", "addr", "flush", "dev", dev}
 	if scope != "" {
-		cmd = append(cmd, []string{"scope", scope})
+		cmd = append(cmd, []string{"scope", scope}...)
 	}
 	_, err := shared.RunCommand(cmd[0], cmd[1:]...)
 	return err
@@ -1220,10 +1220,10 @@ func IPv4FlushRoute(route string, dev string, rtProto string) error {
 		cmd = append(cmd, route)
 	}
 
-	cmd = append(cmd, []string{"dev", dev})
+	cmd = append(cmd, []string{"dev", dev}...)
 
 	if rtProto != "" {
-		cmd = append(cmd, []string{"proto", rtProto})
+		cmd = append(cmd, []string{"proto", rtProto}...)
 	}
 	_, err := shared.RunCommand(cmd[0], cmd[1:]...)
 	return err
@@ -1236,10 +1236,10 @@ func IPv6FlushRoute(route string, dev string, rtProto string) error {
 		cmd = append(cmd, route)
 	}
 
-	cmd = append(cmd, []string{"dev", dev})
+	cmd = append(cmd, []string{"dev", dev}...)
 
 	if rtProto != "" {
-		cmd = append(cmd, []string{"proto", rtProto})
+		cmd = append(cmd, []string{"proto", rtProto}...)
 	}
 	_, err := shared.RunCommand(cmd[0], cmd[1:]...)
 	return err
