@@ -1222,3 +1222,7 @@ This introduces the `tpm` device type.
 This introduces `rebase` as a value for zfs.clone\_copy causing LXD to
 track down any "image" dataset in the ancestry line and then perform
 send/receive on top of that.
+
+## custom_volume_refresh
+This enables refreshing a custom storage volume on copying, and introduces the `refresh` option for storage volume
+copy operations.
