@@ -91,6 +91,9 @@ type StorageVolumeSource struct {
 
 	// API extension: storage_api_volume_snapshots
 	VolumeOnly bool `json:"volume_only" yaml:"volume_only"`
+
+	// API extension: custom_volume_refresh
+	Refresh bool `json:"refresh" yaml:"refresh"`
 }
 
 // StoragePoolVolumeBackup represents a LXD volume backup.
