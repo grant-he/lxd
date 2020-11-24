@@ -302,6 +302,7 @@ type cmdStorageVolumeCopy struct {
 
 	flagMode       string
 	flagVolumeOnly bool
+	flagRefresh    bool
 }
 
 func (c *cmdStorageVolumeCopy) Command() *cobra.Command {
@@ -315,6 +316,7 @@ func (c *cmdStorageVolumeCopy) Command() *cobra.Command {
 	cmd.Flags().StringVar(&c.flagMode, "mode", "pull", i18n.G("Transfer mode. One of pull (default), push or relay.")+"``")
 	cmd.Flags().StringVar(&c.storage.flagTarget, "target", "", i18n.G("Cluster member name")+"``")
 	cmd.Flags().BoolVar(&c.flagVolumeOnly, "volume-only", false, i18n.G("Copy the volume without its snapshots"))
+	cmd.Flags().BoolVar(&c.flagRefresh, "refresh", false, i18n.G("Perform an incremental copy"))
 	cmd.RunE = c.Run
 
 	return cmd
@@ -417,6 +419,7 @@ func (c *cmdStorageVolumeCopy) Run(cmd *cobra.Command, args []string) error {
 		args.Name = dstVolName
 		args.Mode = mode
 		args.VolumeOnly = c.flagVolumeOnly
+		args.Refresh = c.flagRefresh
 
 		if isSnapshot {
 			srcVol.Name = srcVolName
