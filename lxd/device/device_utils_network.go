@@ -260,7 +260,7 @@ func networkCreateVethPair(hostName string, m deviceConfig.Device) (string, erro
 
 // networkCreateTap creates and configures a TAP device.
 func networkCreateTap(hostName string, m deviceConfig.Device) error {
-	err := InterfaceAddTAP(hostName)
+	err := network.InterfaceAddTAP(hostName)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to create the tap interfaces %s", hostName)
 	}
