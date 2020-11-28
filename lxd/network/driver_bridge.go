@@ -1765,7 +1765,7 @@ func (n *bridge) bootRoutesV6() ([]string, error) {
 // applyBootRoutesV4 applies a list of IPv4 boot routes to the network's device.
 func (n *bridge) applyBootRoutesV4(routes []string) {
 	for _, route := range routes {
-		_, err := IPv4ReplaceRoute(n.name, strings.Fields(route))
+		err := IPv4ReplaceRoute(n.name, strings.Fields(route))
 		
 		if err != nil {
 			// If it fails, then we can't stop as the route has already gone, so just log and continue.
@@ -1777,7 +1777,7 @@ func (n *bridge) applyBootRoutesV4(routes []string) {
 // applyBootRoutesV6 applies a list of IPv6 boot routes to the network's device.
 func (n *bridge) applyBootRoutesV6(routes []string) {
 	for _, route := range routes {
-		_, err := IPv6ReplaceRoute(n.name, strings.Fields(route))
+		err := IPv6ReplaceRoute(n.name, strings.Fields(route))
 
 		if err != nil {
 			// If it fails, then we can't stop as the route has already gone, so just log and continue.

@@ -1252,13 +1252,13 @@ func IPv6FlushRoute(route string, dev string, rtProto string) error {
 }
 
 func IPv4ReplaceRoute(name string, routeFields []string) error {
-	_, err := shared.RunCommand("ip", "-4", "route", "replace", "dev", name, "proto", "boot", routeFields...)
+	err := shared.RunCommand("ip", "-4", "route", "replace", "dev", name, "proto", "boot", routeFields...)
 
 	return err
 }
 
 func IPv6ReplaceRoute(name string, routeFields []string) error {
-	_, err := shared.RunCommand("ip", "-6", "route", "replace", "dev", name, "proto", "boot", routeFields...)
+	err := shared.RunCommand("ip", "-6", "route", "replace", "dev", name, "proto", "boot", routeFields...)
 
 	return err
 }
