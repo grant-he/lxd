@@ -1050,6 +1050,12 @@ func VLANInterfaceCreate(parent string, vlanDevice string, vlanID string) (bool,
 //// Network interface operations ////
 // TODO: convert these to use netlink instead of ip, per #7871
 
+// InterfaceAddTAP creates TAP interface
+func InterfaceAddTAP(name string) error {
+	_, err := shared.RunCommand("ip", "tuntap", "add", "name", name, "mode", "tap")
+	return err
+}
+
 // InterfaceAddRoute adds a route to device
 func InterfaceAddRoute(route string, dev string, src string) error {
 	cmd := []string{"ip", "route", "add", route, "dev", dev}
