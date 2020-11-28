@@ -512,7 +512,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 				return err
 			}
 		} else {
-			_, err := shared.RunCommand("ip", "link", "add", "dev", n.name, "type", "bridge")
+			err := IPLinkAddBridge(n.name)
 			if err != nil {
 				return err
 			}
@@ -571,7 +571,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 
 	// Attempt to add a dummy device to the bridge to force the MTU.
 	if mtu != "" && n.config["bridge.driver"] != "openvswitch" {
-		_, err = shared.RunCommand("ip", "link", "add", "dev", fmt.Sprintf("%s-mtu", n.name), "mtu", mtu, "type", "dummy")
+		err = IPLinkAddDummy(fmt.Sprintf("%s-mtu", n.name), mtu)
 		if err == nil {
 			err = InterfaceBringUp(fmt.Sprintf("%s-mtu", n.name))
 			if err == nil {
@@ -1152,7 +1152,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		} else {
 			vxlanID := fmt.Sprintf("%d", binary.BigEndian.Uint32(overlaySubnet.IP.To4())>>8)
 
-			_, err = shared.RunCommand("ip", "link", "add", tunName, "type", "vxlan", "id", vxlanID, "dev", devName, "dstport", "0", "local", devAddr, "fan-map", fmt.Sprintf("%s:%s", overlay, underlay))
+			err = IPLinkAddVxlan(tunName, vxlanID, devName, "0", devAddr, fmt.Sprintf("%s:%s", overlay, underlay))
 			if err != nil {
 				return err
 			}

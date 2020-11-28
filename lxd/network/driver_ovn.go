@@ -872,7 +872,7 @@ func (n *ovn) startUplinkPortBridge(uplinkNet Network) error {
 
 		// Create veth pair if needed.
 		if !InterfaceExists(vars.uplinkEnd) && !InterfaceExists(vars.ovsEnd) {
-			_, err := shared.RunCommand("ip", "link", "add", "dev", vars.uplinkEnd, "type", "veth", "peer", "name", vars.ovsEnd)
+			err := IPLinkAddVeth(vars.uplinkEnd, vars.ovsEnd)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to create the uplink veth interfaces %q and %q", vars.uplinkEnd, vars.ovsEnd)
 			}

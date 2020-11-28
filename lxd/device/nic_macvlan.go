@@ -141,13 +141,15 @@ func (d *nicMACVLAN) Start() (*deviceConfig.RunConfig, error) {
 
 	if d.inst.Type() == instancetype.Container {
 		// Create MACVLAN interface.
-		_, err = shared.RunCommand("ip", "link", "add", "dev", saveData["host_name"], "link", actualParentName, "type", "macvlan", "mode", "bridge")
+		err = network.IPLinkAddMacvlan(saveData["host_name"], actualParentName, "bridge")
+
 		if err != nil {
 			return nil, err
 		}
 	} else if d.inst.Type() == instancetype.VM {
 		// Create MACVTAP interface.
-		_, err = shared.RunCommand("ip", "link", "add", "dev", saveData["host_name"], "link", actualParentName, "type", "macvtap", "mode", "bridge")
+		err = network.IPLinkAddMacvtap(saveData["host_name"], actualParentName, "bridge")
+
 		if err != nil {
 			return nil, err
 		}

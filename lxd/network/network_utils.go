@@ -40,10 +40,9 @@ func validInterfaceName(value string) error {
 	if len(value) < 2 {
 		return fmt.Errorf("Network interface is too short (minimum 2 characters)")
 	}
-
-	if len(value) > 15 {
-		return fmt.Errorf("Network interface is too long (maximum 15 characters)")
-	}
+	cmd := []string{"-6", "route", "replace", "dev", n.name, "proto", "boot"}
+	cmd = append(cmd, strings.Fields(route)...)
+	_, err := shared.RunCommand("ip", cmd...)
 
 	// Validate the character set.
 	match, _ := regexp.MatchString("^[-_a-zA-Z0-9.]*$", value)
@@ -1252,12 +1251,42 @@ func IPv6FlushRoute(route string, dev string, rtProto string) error {
 }
 
 func IPv4ReplaceRoute(name string, routeFields []string) error {
-	err := shared.RunCommand("ip", "-4", "route", "replace", "dev", name, "proto", "boot", routeFields...)
+	_, err := shared.RunCommand("ip", "-4", "route", "replace", "dev", name, "proto", "boot", routeFields...)
 	return err
 }
 
 func IPv6ReplaceRoute(name string, routeFields []string) error {
-	err := shared.RunCommand("ip", "-6", "route", "replace", "dev", name, "proto", "boot", routeFields...)
+	_, err := shared.RunCommand("ip", "-6", "route", "replace", "dev", name, "proto", "boot", routeFields...)
+	return err
+}
+
+func IPLinkAddDummy(devName string, mtu string) error {
+	_, err := shared.RunCommand("ip", "link", "add", "dev", devName, "mtu", mtu, "type", "dummy")
+	return err
+}
+
+func IPLinkAddVeth(devName string, peerName string) error {
+	_, err := shared.RunCommand("ip", "link", "add", "dev", devName, "type", "veth", "peer", "name", peerName)
+	return err
+}
+
+func IPLinkAddBridge(devName string) error {
+	_, err := shared.RunCommand("ip", "link", "add", "dev", devName, "type", "bridge")
+	return err
+}
+
+func IPLinkAddMacvlan(devName string, parentName string, mode string) error {
+	_, err := shared.RunCommand("ip", "link", "add", "dev", devName, "link", parentName, "type", "macvlan", "mode", mode)
+	return err
+}
+
+func IPLinkAddMacvtap(devName string, parentName string, mode string) error {
+	_, err := shared.RunCommand("ip", "link", "add", "dev", devName, "link", parentName, "type", "macvtap", "mode", mode)
+	return err
+}
+
+func IPLinkAddVxlan(tunName string, vxlanID string, devName string, dstport string, devAddr string, fanMap string) error {
+	_, err := shared.RunCommand("ip", "link", "add", tunName, "type", "vxlan", "id", vxlanID, "dev", devName, "dstport", dstport, "local", devAddr, "fan-map", fanMap)
 	return err
 }
 

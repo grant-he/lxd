@@ -198,7 +198,7 @@ func networkRestorePhysicalNic(hostName string, volatile map[string]string) erro
 func networkCreateVethPair(hostName string, m deviceConfig.Device) (string, error) {
 	peerName := network.RandomDevName("veth")
 
-	_, err := shared.RunCommand("ip", "link", "add", "dev", hostName, "type", "veth", "peer", "name", peerName)
+	err := IPLinkAddVeth(hostName, peerName)
 	if err != nil {
 		return "", fmt.Errorf("Failed to create the veth interfaces %s and %s: %v", hostName, peerName, err)
 	}
