@@ -1765,9 +1765,8 @@ func (n *bridge) bootRoutesV6() ([]string, error) {
 // applyBootRoutesV4 applies a list of IPv4 boot routes to the network's device.
 func (n *bridge) applyBootRoutesV4(routes []string) {
 	for _, route := range routes {
-		cmd := []string{"-4", "route", "replace", "dev", n.name, "proto", "boot"}
-		cmd = append(cmd, strings.Fields(route)...)
-		_, err := shared.RunCommand("ip", cmd...)
+		_, err := IPv4ReplaceRoute(n.name, strings.Fields(route))
+		
 		if err != nil {
 			// If it fails, then we can't stop as the route has already gone, so just log and continue.
 			n.logger.Error("Failed to restore route", log.Ctx{"err": err})
@@ -1778,9 +1777,8 @@ func (n *bridge) applyBootRoutesV4(routes []string) {
 // applyBootRoutesV6 applies a list of IPv6 boot routes to the network's device.
 func (n *bridge) applyBootRoutesV6(routes []string) {
 	for _, route := range routes {
-		cmd := []string{"-6", "route", "replace", "dev", n.name, "proto", "boot"}
-		cmd = append(cmd, strings.Fields(route)...)
-		_, err := shared.RunCommand("ip", cmd...)
+		_, err := IPv6ReplaceRoute(n.name, strings.Fields(route))
+
 		if err != nil {
 			// If it fails, then we can't stop as the route has already gone, so just log and continue.
 			n.logger.Error("Failed to restore route", log.Ctx{"err": err})
