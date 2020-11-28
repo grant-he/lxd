@@ -1143,7 +1143,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 			}
 
 			// Fails if the map is already set.
-			shared.RunCommand("ip", "link", "change", "dev", "tunl0", "type", "ipip", "fan-map", fmt.Sprintf("%s:%s", overlay, underlay))
+			IPLinkChangeIpip("tunl0", fmt.Sprintf("%s:%s", overlay, underlay))
 
 			err = InterfaceAddRoute(overlay, "tunl0", addr[0])
 			if err != nil {

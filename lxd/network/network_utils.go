@@ -1290,6 +1290,11 @@ func IPLinkAddVxlan(tunName string, vxlanID string, devName string, dstport stri
 	return err
 }
 
+func IPLinkChangeIpip(devName string, fanmap string) error {
+	_, err := shared.RunCommand("ip", "link", "change", "dev", devName, "type", "ipip", "fan-map", fanmap)
+	return err
+}
+
 // SubnetContains returns true if outerSubnet contains innerSubnet.
 func SubnetContains(outerSubnet *net.IPNet, innerSubnet *net.IPNet) bool {
 	if outerSubnet == nil || innerSubnet == nil {
