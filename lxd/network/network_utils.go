@@ -40,9 +40,6 @@ func validInterfaceName(value string) error {
 	if len(value) < 2 {
 		return fmt.Errorf("Network interface is too short (minimum 2 characters)")
 	}
-	cmd := []string{"-6", "route", "replace", "dev", n.name, "proto", "boot"}
-	cmd = append(cmd, strings.Fields(route)...)
-	_, err := shared.RunCommand("ip", cmd...)
 
 	// Validate the character set.
 	match, _ := regexp.MatchString("^[-_a-zA-Z0-9.]*$", value)
@@ -1251,12 +1248,14 @@ func IPv6FlushRoute(route string, dev string, rtProto string) error {
 }
 
 func IPv4ReplaceRoute(name string, routeFields []string) error {
-	_, err := shared.RunCommand("ip", "-4", "route", "replace", "dev", name, "proto", "boot", routeFields...)
+	ipArgs := append([]string{"-4", "route", "replace", "dev", name, "proto", "boot"}, routeFields...)
+	_, err := shared.RunCommand("ip", ipArgs...)
 	return err
 }
 
 func IPv6ReplaceRoute(name string, routeFields []string) error {
-	_, err := shared.RunCommand("ip", "-6", "route", "replace", "dev", name, "proto", "boot", routeFields...)
+	ipArgs := append([]string{"-6", "route", "replace", "dev", name, "proto", "boot"}, routeFields...)
+	_, err := shared.RunCommand("ip", ipArgs...)
 	return err
 }
 

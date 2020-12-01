@@ -198,7 +198,7 @@ func networkRestorePhysicalNic(hostName string, volatile map[string]string) erro
 func networkCreateVethPair(hostName string, m deviceConfig.Device) (string, error) {
 	peerName := network.RandomDevName("veth")
 
-	err := IPLinkAddVeth(hostName, peerName)
+	err := network.IPLinkAddVeth(hostName, peerName)
 	if err != nil {
 		return "", fmt.Errorf("Failed to create the veth interfaces %s and %s: %v", hostName, peerName, err)
 	}
@@ -361,7 +361,7 @@ func networkSetVethRoutes(s *state.State, m deviceConfig.Device) error {
 	if m["ipv4.routes"] != "" {
 		for _, route := range strings.Split(m["ipv4.routes"], ",") {
 			route = strings.TrimSpace(route)
-			err := IPv4AddRoute(route, routeDev, "", "boot")
+			err := network.IPv4AddRoute(route, routeDev, "", "boot")
 			if err != nil {
 				return err
 			}
@@ -372,7 +372,7 @@ func networkSetVethRoutes(s *state.State, m deviceConfig.Device) error {
 	if m["ipv6.routes"] != "" {
 		for _, route := range strings.Split(m["ipv6.routes"], ",") {
 			route = strings.TrimSpace(route)
-			err := IPv6AddRoute(route, routeDev, "", "boot")
+			err := network.IPv6AddRoute(route, routeDev, "", "boot")
 			if err != nil {
 				return err
 			}
@@ -414,7 +414,7 @@ func networkRemoveVethRoutes(s *state.State, m deviceConfig.Device) {
 	if m["ipv4.routes"] != "" {
 		for _, route := range strings.Split(m["ipv4.routes"], ",") {
 			route = strings.TrimSpace(route)
-			err := IPv4FlushRoute(route, routeDev, "boot")
+			err := network.IPv4FlushRoute(route, routeDev, "boot")
 			if err != nil {
 				logger.Errorf("Failed to remove static route: %s to %s: %s", route, routeDev, err)
 			}
@@ -425,7 +425,7 @@ func networkRemoveVethRoutes(s *state.State, m deviceConfig.Device) {
 	if m["ipv6.routes"] != "" {
 		for _, route := range strings.Split(m["ipv6.routes"], ",") {
 			route = strings.TrimSpace(route)
-			err := IPv6FlushRoute(route, routeDev, "boot")
+			err := network.IPv6FlushRoute(route, routeDev, "boot")
 			if err != nil {
 				logger.Errorf("Failed to remove static route: %s to %s: %s", route, routeDev, err)
 			}

@@ -343,7 +343,7 @@ func (d *nicRouted) postStart() error {
 		// Add dummy link-local gateway IPs to the host end of the veth pair. This ensures that
 		// liveness detection of the gateways inside the instance work and ensure that traffic
 		// doesn't periodically halt whilst ARP is re-detected.
-		err := IPv4AddAddress(d.config["host_name"], fmt.Sprintf("%s/32", d.ipv4HostAddress()))
+		err := network.IPv4AddAddress(d.config["host_name"], fmt.Sprintf("%s/32", d.ipv4HostAddress()))
 		if err != nil {
 			return err
 		}
@@ -355,7 +355,7 @@ func (d *nicRouted) postStart() error {
 		if d.config["ipv4.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv4.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				err := IPv4AddRoute(fmt.Sprintf("%s/32", addr), d.config["host_name"], d.config["ipv4.host_table"], "")
+				err := network.IPv4AddRoute(fmt.Sprintf("%s/32", addr), d.config["host_name"], d.config["ipv4.host_table"], "")
 				if err != nil {
 					return err
 				}
@@ -367,7 +367,7 @@ func (d *nicRouted) postStart() error {
 		// Add dummy link-local gateway IPs to the host end of the veth pair. This ensures that
 		// liveness detection of the gateways inside the instance work and ensure that traffic
 		// doesn't periodically halt whilst NDP is re-detected.
-		err := IPv6AddAddress(d.config["host_name"], fmt.Sprintf("%s/128", d.ipv6HostAddress()))
+		err := network.IPv6AddAddress(d.config["host_name"], fmt.Sprintf("%s/128", d.ipv6HostAddress()))
 		if err != nil {
 			return err
 		}
@@ -379,7 +379,7 @@ func (d *nicRouted) postStart() error {
 		if d.config["ipv6.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv6.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				err := IPv6AddRoute(fmt.Sprintf("%s/128", addr), d.config["host_name"], d.config["ipv6.host_table"], "")
+				err := network.IPv6AddRoute(fmt.Sprintf("%s/128", addr), d.config["host_name"], d.config["ipv6.host_table"], "")
 				if err != nil {
 					return err
 				}
