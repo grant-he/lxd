@@ -157,11 +157,12 @@ func (s *migrationSourceWs) DoStorage(state *state.State, projectName string, po
 
 func newStorageMigrationSink(args *MigrationSinkArgs) (*migrationSink, error) {
 	sink := migrationSink{
-		src:    migrationFields{volumeOnly: args.VolumeOnly},
-		dest:   migrationFields{volumeOnly: args.VolumeOnly},
-		url:    args.Url,
-		dialer: args.Dialer,
-		push:   args.Push,
+		src:     migrationFields{volumeOnly: args.VolumeOnly},
+		dest:    migrationFields{volumeOnly: args.VolumeOnly},
+		url:     args.Url,
+		dialer:  args.Dialer,
+		push:    args.Push,
+		refresh: args.Refresh,
 	}
 
 	if sink.push {
@@ -284,6 +285,7 @@ func (c *migrationSink) DoStorage(state *state.State, projectName string, poolNa
 	respHeader = migration.TypesToHeader(respTypes...)
 	respHeader.SnapshotNames = offerHeader.SnapshotNames
 	respHeader.Snapshots = offerHeader.Snapshots
+	respHeader.Refresh = &c.refresh
 
 	// Translate the legacy MigrationSinkArgs to a VolumeTargetArgs suitable for use
 	// with the new storage layer.
@@ -293,6 +295,7 @@ func (c *migrationSink) DoStorage(state *state.State, projectName string, poolNa
 			Config:        req.Config,
 			Description:   req.Description,
 			MigrationType: respTypes[0],
+			Refresh:       req.Source.Refresh,
 			TrackProgress: true,
 			ContentType:   req.ContentType,
 		}
@@ -339,6 +342,7 @@ func (c *migrationSink) DoStorage(state *state.State, projectName string, poolNa
 			args := MigrationSinkArgs{
 				RsyncFeatures: rsyncFeatures,
 				Snapshots:     respHeader.Snapshots,
+				Refresh:       c.refresh,
 				VolumeOnly:    c.src.volumeOnly,
 			}
 
