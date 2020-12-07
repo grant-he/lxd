@@ -989,7 +989,7 @@ func (n *ovn) startUplinkPortPhysical(uplinkNet Network) error {
 	uplinkConfig := uplinkNet.Config()
 	uplinkHostName := GetHostDevice(uplinkConfig["parent"], uplinkConfig["vlan"])
 
-	if !iproute.iproute.InterfaceExists(uplinkHostName) {
+	if !iproute.InterfaceExists(uplinkHostName) {
 		return fmt.Errorf("Uplink network %q is not started", uplinkNet.Name())
 	}
 
