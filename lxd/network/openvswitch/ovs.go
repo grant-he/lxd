@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/shared"
 )
 
@@ -138,9 +139,7 @@ func (o *OVS) InterfaceAssociateOVNSwitchPort(interfaceName string, ovnSwitchPor
 			// Atempt to remove port, but don't fail if doesn't exist or can't be removed, at least
 			// the OVS association has been successfully removed, so the new port being added next
 			// won't fail to work properly.
-			// TODO how can I import network in network/openvswitch?
-			//_ = network.InterfaceRemove(port)
-			shared.RunCommand("ip", "link", "del", "dev", port)
+			_ = iproute.InterfaceRemove(port)
 		}
 	}
 
