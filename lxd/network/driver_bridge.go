@@ -24,6 +24,7 @@ import (
 	"github.com/grant-he/lxd/lxd/db"
 	"github.com/grant-he/lxd/lxd/dnsmasq"
 	"github.com/grant-he/lxd/lxd/dnsmasq/dhcpalloc"
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/network/openvswitch"
 	"github.com/grant-he/lxd/lxd/node"
 	"github.com/grant-he/lxd/lxd/revert"
@@ -398,7 +399,7 @@ func (n *bridge) Validate(config map[string]string) error {
 func (n *bridge) Create(clientType cluster.ClientType) error {
 	n.logger.Debug("Create", log.Ctx{"clientType": clientType, "config": n.config})
 
-	if InterfaceExists(n.name) {
+	if iproute.InterfaceExists(n.name) {
 		return fmt.Errorf("Network interface %q already exists", n.name)
 	}
 
@@ -407,7 +408,7 @@ func (n *bridge) Create(clientType cluster.ClientType) error {
 
 // isRunning returns whether the network is up.
 func (n *bridge) isRunning() bool {
-	return InterfaceExists(n.name)
+	return iproute.InterfaceExists(n.name)
 }
 
 // Delete deletes a network.
@@ -435,7 +436,7 @@ func (n *bridge) Delete(clientType cluster.ClientType) error {
 func (n *bridge) Rename(newName string) error {
 	n.logger.Debug("Rename", log.Ctx{"newName": newName})
 
-	if InterfaceExists(newName) {
+	if iproute.InterfaceExists(newName) {
 		return fmt.Errorf("Network interface %q already exists", newName)
 	}
 
@@ -512,7 +513,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 				return err
 			}
 		} else {
-			err := IPLinkAddBridge(n.name)
+			err := iproute.IPLinkAddBridge(n.name)
 			if err != nil {
 				return err
 			}
@@ -548,7 +549,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 	// Cleanup any existing tunnel device.
 	for _, iface := range ifaces {
 		if strings.HasPrefix(iface.Name, fmt.Sprintf("%s-", n.name)) {
-			err = InterfaceRemove(iface.Name)
+			err = iproute.InterfaceRemove(iface.Name)
 			if err != nil {
 				return err
 			}
@@ -571,9 +572,9 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 
 	// Attempt to add a dummy device to the bridge to force the MTU.
 	if mtu != "" && n.config["bridge.driver"] != "openvswitch" {
-		err = IPLinkAddDummy(fmt.Sprintf("%s-mtu", n.name), mtu)
+		err = iproute.IPLinkAddDummy(fmt.Sprintf("%s-mtu", n.name), mtu)
 		if err == nil {
-			err = InterfaceBringUp(fmt.Sprintf("%s-mtu", n.name))
+			err = iproute.InterfaceBringUp(fmt.Sprintf("%s-mtu", n.name))
 			if err == nil {
 				AttachInterface(n.name, fmt.Sprintf("%s-mtu", n.name))
 			}
@@ -585,7 +586,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		mtu = "1500"
 	}
 
-	err = InterfaceSetMTU(n.name, mtu)
+	err = iproute.InterfaceSetMTU(n.name, mtu)
 	if err != nil {
 		return err
 	}
@@ -635,7 +636,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 
 	// Set the MAC address on the bridge interface if specified.
 	if hwAddr != "" {
-		err = InterfaceSetMAC(n.name, hwAddr)
+		err = iproute.InterfaceSetMAC(n.name, hwAddr)
 		if err != nil {
 			return err
 		}
@@ -656,7 +657,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 	}
 
 	// Bring it up.
-	err = InterfaceBringUp(n.name)
+	err = iproute.InterfaceBringUp(n.name)
 	if err != nil {
 		return err
 	}
@@ -710,12 +711,12 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 	}
 
 	// Flush all IPv4 addresses and routes.
-	err = IPv4FlushAddresses(n.name, "global")
+	err = iproute.IPv4FlushAddresses(n.name, "global")
 	if err != nil {
 		return err
 	}
 
-	err = IPv4FlushRoute("", n.name, "static")
+	err = iproute.IPv4FlushRoute("", n.name, "static")
 	if err != nil {
 		return err
 	}
@@ -833,7 +834,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		}
 
 		// Add the address.
-		err = IPv4AddAddress(n.name, n.config["ipv4.address"])
+		err = iproute.IPv4AddAddress(n.name, n.config["ipv4.address"])
 		if err != nil {
 			return err
 		}
@@ -863,7 +864,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		if n.config["ipv4.routes"] != "" {
 			for _, route := range strings.Split(n.config["ipv4.routes"], ",") {
 				route = strings.TrimSpace(route)
-				err = IPv4AddRoute(route, n.name, "", "static")
+				err = iproute.IPv4AddRoute(route, n.name, "", "static")
 				if err != nil {
 					return err
 				}
@@ -890,12 +891,12 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 	}
 
 	// Flush all IPv6 addresses and routes.
-	err = IPv6FlushAddresses(n.name, "global")
+	err = iproute.IPv6FlushAddresses(n.name, "global")
 	if err != nil {
 		return err
 	}
 
-	err = IPv6FlushRoute("", n.name, "static")
+	err = iproute.IPv6FlushRoute("", n.name, "static")
 	if err != nil {
 		return err
 	}
@@ -1001,7 +1002,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		}
 
 		// Add the address.
-		err = IPv6AddAddress(n.name, n.config["ipv6.address"])
+		err = iproute.IPv6AddAddress(n.name, n.config["ipv6.address"])
 		if err != nil {
 			return err
 		}
@@ -1030,7 +1031,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		if n.config["ipv6.routes"] != "" {
 			for _, route := range strings.Split(n.config["ipv6.routes"], ",") {
 				route = strings.TrimSpace(route)
-				err = IPv6AddRoute(route, n.name, "", "static")
+				err = iproute.IPv6AddRoute(route, n.name, "", "static")
 				if err != nil {
 					return err
 				}
@@ -1092,13 +1093,13 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 			if fanMtu != mtu {
 				mtu = fanMtu
 				if n.config["bridge.driver"] != "openvswitch" {
-					err = InterfaceSetMTU(fmt.Sprintf("%s-mtu", n.name), mtu)
+					err = iproute.InterfaceSetMTU(fmt.Sprintf("%s-mtu", n.name), mtu)
 					if err != nil {
 						return err
 					}
 				}
 
-				err = InterfaceSetMTU(n.name, mtu)
+				err = iproute.InterfaceSetMTU(n.name, mtu)
 				if err != nil {
 					return err
 				}
@@ -1112,7 +1113,7 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 		}
 
 		// Add the address.
-		err = IPv4AddAddress(n.name, fanAddress)
+		err = iproute.IPv4AddAddress(n.name, fanAddress)
 		if err != nil {
 			return err
 		}
@@ -1132,27 +1133,27 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 
 		// Setup the tunnel.
 		if n.config["fan.type"] == "ipip" {
-			err = IPv4FlushRoute("", "tunl0", "")
+			err = iproute.IPv4FlushRoute("", "tunl0", "")
 			if err != nil {
 				return err
 			}
 
-			err = InterfaceBringUp("tunl0")
+			err = iproute.InterfaceBringUp("tunl0")
 			if err != nil {
 				return err
 			}
 
 			// Fails if the map is already set.
-			IPLinkChangeIpip("tunl0", fmt.Sprintf("%s:%s", overlay, underlay))
+			iproute.IPLinkChangeIpip("tunl0", fmt.Sprintf("%s:%s", overlay, underlay))
 
-			err = InterfaceAddRoute(overlay, "tunl0", addr[0])
+			err = iproute.InterfaceAddRoute(overlay, "tunl0", addr[0])
 			if err != nil {
 				return err
 			}
 		} else {
 			vxlanID := fmt.Sprintf("%d", binary.BigEndian.Uint32(overlaySubnet.IP.To4())>>8)
 
-			err = IPLinkAddVxlan(tunName, vxlanID, devName, "0", devAddr, fmt.Sprintf("%s:%s", overlay, underlay))
+			err = iproute.IPLinkAddVxlan(tunName, vxlanID, devName, "0", devAddr, fmt.Sprintf("%s:%s", overlay, underlay))
 			if err != nil {
 				return err
 			}
@@ -1162,16 +1163,16 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 				return err
 			}
 
-			err = InterfaceSetMTU(tunName, mtu)
+			err = iproute.InterfaceSetMTU(tunName, mtu)
 			if err != nil {
 				return err
 			}
-			err = InterfaceBringUp(tunName)
+			err = iproute.InterfaceBringUp(tunName)
 			if err != nil {
 				return err
 			}
 
-			err = InterfaceBringUp(n.name)
+			err = iproute.InterfaceBringUp(n.name)
 			if err != nil {
 				return err
 			}
@@ -1289,16 +1290,16 @@ func (n *bridge) setup(oldConfig map[string]string) error {
 			return err
 		}
 
-		err = InterfaceSetMTU(tunName, mtu)
+		err = iproute.InterfaceSetMTU(tunName, mtu)
 		if err != nil {
 			return err
 		}
-		err = InterfaceBringUp(tunName)
+		err = iproute.InterfaceBringUp(tunName)
 		if err != nil {
 			return err
 		}
 
-		err = InterfaceBringUp(n.name)
+		err = iproute.InterfaceBringUp(n.name)
 		if err != nil {
 			return err
 		}
@@ -1465,7 +1466,7 @@ func (n *bridge) Stop() error {
 			return err
 		}
 	} else {
-		err := InterfaceRemove(n.name)
+		err := iproute.InterfaceRemove(n.name)
 		if err != nil {
 			return err
 		}
@@ -1506,7 +1507,7 @@ func (n *bridge) Stop() error {
 	// Cleanup any existing tunnel device
 	for _, iface := range ifaces {
 		if strings.HasPrefix(iface.Name, fmt.Sprintf("%s-", n.name)) {
-			err = InterfaceRemove(iface.Name)
+			err = iproute.InterfaceRemove(iface.Name)
 			if err != nil {
 				return err
 			}
@@ -1576,7 +1577,7 @@ func (n *bridge) Update(newNetwork api.NetworkPut, targetNode string, clientType
 				continue
 			}
 
-			if !shared.StringInSlice(dev, devices) && InterfaceExists(dev) {
+			if !shared.StringInSlice(dev, devices) && iproute.InterfaceExists(dev) {
 				err = DetachInterface(n.name, dev)
 				if err != nil {
 					return err
@@ -1765,7 +1766,7 @@ func (n *bridge) bootRoutesV6() ([]string, error) {
 // applyBootRoutesV4 applies a list of IPv4 boot routes to the network's device.
 func (n *bridge) applyBootRoutesV4(routes []string) {
 	for _, route := range routes {
-		err := IPv4ReplaceRoute(n.name, strings.Fields(route))
+		err := iproute.IPv4ReplaceRoute(n.name, strings.Fields(route))
 		
 		if err != nil {
 			// If it fails, then we can't stop as the route has already gone, so just log and continue.
@@ -1777,7 +1778,7 @@ func (n *bridge) applyBootRoutesV4(routes []string) {
 // applyBootRoutesV6 applies a list of IPv6 boot routes to the network's device.
 func (n *bridge) applyBootRoutesV6(routes []string) {
 	for _, route := range routes {
-		err := IPv6ReplaceRoute(n.name, strings.Fields(route))
+		err := iproute.IPv6ReplaceRoute(n.name, strings.Fields(route))
 
 		if err != nil {
 			// If it fails, then we can't stop as the route has already gone, so just log and continue.

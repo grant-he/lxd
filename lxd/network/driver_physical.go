@@ -8,6 +8,7 @@ import (
 
 	"github.com/grant-he/lxd/lxd/cluster"
 	"github.com/grant-he/lxd/lxd/db"
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/project"
 	"github.com/grant-he/lxd/lxd/revert"
 	"github.com/grant-he/lxd/shared"
@@ -156,12 +157,12 @@ func (n *physical) Start() error {
 		return err
 	}
 	if created {
-		revert.Add(func() { InterfaceRemove(hostName) })
+		revert.Add(func() { iproute.InterfaceRemove(hostName) })
 	}
 
 	// Set the MTU.
 	if n.config["mtu"] != "" {
-		err = InterfaceSetMTU(hostName, n.config["mtu"])
+		err = iproute.InterfaceSetMTU(hostName, n.config["mtu"])
 		if err != nil {
 			return err
 		}
@@ -190,16 +191,16 @@ func (n *physical) Stop() error {
 	hostName := GetHostDevice(n.config["parent"], n.config["vlan"])
 
 	// Only try and remove created VLAN interfaces.
-	if n.config["vlan"] != "" && shared.IsTrue(n.config["volatile.last_state.created"]) && InterfaceExists(hostName) {
-		err := InterfaceRemove(hostName)
+	if n.config["vlan"] != "" && shared.IsTrue(n.config["volatile.last_state.created"]) && iproute.InterfaceExists(hostName) {
+		err := iproute.InterfaceRemove(hostName)
 		if err != nil {
 			return err
 		}
 	}
 
 	// Reset MTU back to 1500 if overridden in config.
-	if n.config["mtu"] != "" && InterfaceExists(hostName) {
-		err := InterfaceSetMTU(hostName, "1500")
+	if n.config["mtu"] != "" && iproute.InterfaceExists(hostName) {
+		err := iproute.InterfaceSetMTU(hostName, "1500")
 		if err != nil {
 			return err
 		}

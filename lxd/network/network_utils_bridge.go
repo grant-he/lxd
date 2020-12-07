@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/network/openvswitch"
 	"github.com/grant-he/lxd/shared"
 )
@@ -59,7 +60,7 @@ func IsNativeBridge(bridgeName string) bool {
 // AttachInterface attaches an interface to a bridge.
 func AttachInterface(bridgeName string, devName string) error {
 	if IsNativeBridge(bridgeName) {
-		err := InterfaceSetMaster(devName, bridgeName)
+		err := iproute.InterfaceSetMaster(devName, bridgeName)
 		if err != nil {
 			return err
 		}
@@ -77,7 +78,7 @@ func AttachInterface(bridgeName string, devName string) error {
 // DetachInterface detaches an interface from a bridge.
 func DetachInterface(bridgeName string, devName string) error {
 	if IsNativeBridge(bridgeName) {
-		err := InterfaceSetNoMaster(devName)
+		err := iproute.InterfaceSetNoMaster(devName)
 		if err != nil {
 			return err
 		}

@@ -19,6 +19,7 @@ import (
 	"github.com/grant-he/lxd/lxd/db"
 	deviceConfig "github.com/grant-he/lxd/lxd/device/config"
 	"github.com/grant-he/lxd/lxd/instance"
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/locking"
 	"github.com/grant-he/lxd/lxd/network/openvswitch"
 	"github.com/grant-he/lxd/lxd/project"
@@ -871,24 +872,24 @@ func (n *ovn) startUplinkPortBridge(uplinkNet Network) error {
 		vars := n.uplinkPortBridgeVars(uplinkNet)
 
 		// Create veth pair if needed.
-		if !InterfaceExists(vars.uplinkEnd) && !InterfaceExists(vars.ovsEnd) {
-			err := IPLinkAddVeth(vars.uplinkEnd, vars.ovsEnd)
+		if !iproute.InterfaceExists(vars.uplinkEnd) && !iproute.InterfaceExists(vars.ovsEnd) {
+			err := iproute.IPLinkAddVeth(vars.uplinkEnd, vars.ovsEnd)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to create the uplink veth interfaces %q and %q", vars.uplinkEnd, vars.ovsEnd)
 			}
 
-			revert.Add(func() { _ = InterfaceRemove(vars.uplinkEnd) })
+			revert.Add(func() { _ = iproute.InterfaceRemove(vars.uplinkEnd) })
 		}
 
 		// Ensure that the veth interfaces inherit the uplink bridge's MTU (which the OVS bridge also inherits).
 		uplinkNetConfig := uplinkNet.Config()
 		if uplinkNetConfig["bridge.mtu"] != "" {
-			err := InterfaceSetMTU(vars.uplinkEnd, uplinkNetConfig["bridge.mtu"])
+			err := iproute.InterfaceSetMTU(vars.uplinkEnd, uplinkNetConfig["bridge.mtu"])
 			if err != nil {
 				return err
 			}
 
-			err = InterfaceSetMTU(vars.ovsEnd, uplinkNetConfig["bridge.mtu"])
+			err = iproute.InterfaceSetMTU(vars.ovsEnd, uplinkNetConfig["bridge.mtu"])
 			if err != nil {
 				return err
 			}
@@ -906,17 +907,17 @@ func (n *ovn) startUplinkPortBridge(uplinkNet Network) error {
 		}
 
 		// Connect uplink end of veth pair to uplink bridge and bring up.
-		err = InterfaceSetMaster(vars.uplinkEnd, uplinkNet.Name())
+		err = iproute.InterfaceSetMaster(vars.uplinkEnd, uplinkNet.Name())
 		if err != nil {
 			return errors.Wrapf(err, "Failed to connect uplink veth interface %q to uplink bridge %q", vars.uplinkEnd, uplinkNet.Name())
 		}
-		err = InterfaceBringUp(vars.uplinkEnd)
+		err = iproute.InterfaceBringUp(vars.uplinkEnd)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to bring up uplink veth interface %q", vars.uplinkEnd)
 		}
 
 		// Ensure uplink OVS end veth interface is up.
-		err = InterfaceBringUp(vars.ovsEnd)
+		err = iproute.InterfaceBringUp(vars.ovsEnd)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to bring up uplink veth interface %q", vars.ovsEnd)
 		}
@@ -988,7 +989,7 @@ func (n *ovn) startUplinkPortPhysical(uplinkNet Network) error {
 	uplinkConfig := uplinkNet.Config()
 	uplinkHostName := GetHostDevice(uplinkConfig["parent"], uplinkConfig["vlan"])
 
-	if !InterfaceExists(uplinkHostName) {
+	if !iproute.iproute.InterfaceExists(uplinkHostName) {
 		return fmt.Errorf("Uplink network %q is not started", uplinkNet.Name())
 	}
 
@@ -1021,7 +1022,7 @@ func (n *ovn) startUplinkPortPhysical(uplinkNet Network) error {
 	}
 
 	// Bring uplink interface up.
-	err = InterfaceBringUp(uplinkHostName)
+	err = iproute.InterfaceBringUp(uplinkHostName)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to bring up uplink interface %q", uplinkHostName)
 	}
@@ -1093,7 +1094,7 @@ func (n *ovn) deleteUplinkPortBridge(uplinkNet Network) error {
 		// Check OVS uplink bridge exists, if it does, check whether the uplink network is in use.
 		removeVeths := false
 		vars := n.uplinkPortBridgeVars(uplinkNet)
-		if InterfaceExists(vars.ovsBridge) {
+		if iproute.InterfaceExists(vars.ovsBridge) {
 			uplinkUsed, err := n.checkUplinkUse()
 			if err != nil {
 				return err
@@ -1120,15 +1121,15 @@ func (n *ovn) deleteUplinkPortBridge(uplinkNet Network) error {
 
 		// Remove the veth interfaces if they exist.
 		if removeVeths {
-			if InterfaceExists(vars.uplinkEnd) {
-				err := InterfaceRemove(vars.uplinkEnd)
+			if iproute.InterfaceExists(vars.uplinkEnd) {
+				err := iproute.InterfaceRemove(vars.uplinkEnd)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to delete the uplink veth interface %q", vars.uplinkEnd)
 				}
 			}
 
-			if InterfaceExists(vars.ovsEnd) {
-				err := InterfaceRemove(vars.ovsEnd)
+			if iproute.InterfaceExists(vars.ovsEnd) {
+				err := iproute.InterfaceRemove(vars.ovsEnd)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to delete the uplink veth interface %q", vars.ovsEnd)
 				}
@@ -1158,7 +1159,7 @@ func (n *ovn) deleteUplinkPortPhysical(uplinkNet Network) error {
 	// Check OVS uplink bridge exists, if it does, check whether the uplink network is in use.
 	releaseIF := false
 	vars := n.uplinkPortBridgeVars(uplinkNet)
-	if InterfaceExists(vars.ovsBridge) {
+	if iproute.InterfaceExists(vars.ovsBridge) {
 		uplinkUsed, err := n.checkUplinkUse()
 		if err != nil {
 			return err
@@ -1187,8 +1188,8 @@ func (n *ovn) deleteUplinkPortPhysical(uplinkNet Network) error {
 	if releaseIF {
 		uplinkConfig := uplinkNet.Config()
 		uplinkDev := GetHostDevice(uplinkConfig["parent"], uplinkConfig["vlan"])
-		if InterfaceExists(uplinkDev) {
-			err := InterfaceBringDown(uplinkDev)
+		if iproute.InterfaceExists(uplinkDev) {
+			err := iproute.InterfaceBringDown(uplinkDev)
 			if err != nil {
 				return errors.Wrapf(err, "Failed to bring down uplink interface %q", uplinkDev)
 			}
