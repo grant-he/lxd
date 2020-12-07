@@ -8,6 +8,7 @@ import (
 	deviceConfig "github.com/grant-he/lxd/lxd/device/config"
 	"github.com/grant-he/lxd/lxd/instance"
 	"github.com/grant-he/lxd/lxd/instance/instancetype"
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/network"
 	"github.com/grant-he/lxd/lxd/util"
 	"github.com/grant-he/lxd/shared"
@@ -354,7 +355,7 @@ func (d *nicIPVLAN) postStart() error {
 		if d.config["ipv4.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv4.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				err := network.IPv4AddRoute(fmt.Sprintf("%s/32", addr), "lo", d.config["ipv4.host_table"], "")
+				err := iproute.IPv4AddRoute(fmt.Sprintf("%s/32", addr), "lo", d.config["ipv4.host_table"], "")
 				if err != nil {
 					return err
 				}
@@ -368,7 +369,7 @@ func (d *nicIPVLAN) postStart() error {
 		if d.config["ipv6.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv6.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				err := network.IPv6AddRoute(fmt.Sprintf("%s/128", addr), "lo", d.config["ipv6.host_table"], "")
+				err := iproute.IPv6AddRoute(fmt.Sprintf("%s/128", addr), "lo", d.config["ipv6.host_table"], "")
 				if err != nil {
 					return err
 				}
@@ -401,7 +402,7 @@ func (d *nicIPVLAN) postStop() error {
 		if d.config["ipv4.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv4.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				err := network.IPv4DelRoute(fmt.Sprintf("%s/32", addr), "lo", d.config["ipv4.host_table"])
+				err := iproute.IPv4DelRoute(fmt.Sprintf("%s/32", addr), "lo", d.config["ipv4.host_table"])
 				if err != nil {
 					return err
 				}
@@ -414,7 +415,7 @@ func (d *nicIPVLAN) postStop() error {
 		if d.config["ipv6.host_table"] != "" {
 			for _, addr := range strings.Split(d.config["ipv6.address"], ",") {
 				addr = strings.TrimSpace(addr)
-				err := network.IPv6DelRoute(fmt.Sprintf("%s/128", addr), "lo", d.config["ipv6.host_table"])
+				err := iproute.IPv6DelRoute(fmt.Sprintf("%s/128", addr), "lo", d.config["ipv6.host_table"])
 				if err != nil {
 					return err
 				}

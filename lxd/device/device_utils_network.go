@@ -14,6 +14,7 @@ import (
 	"github.com/grant-he/lxd/lxd/device/nictype"
 	"github.com/grant-he/lxd/lxd/instance"
 	"github.com/grant-he/lxd/lxd/instance/instancetype"
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/network"
 	"github.com/grant-he/lxd/lxd/project"
 	"github.com/grant-he/lxd/lxd/revert"
@@ -36,7 +37,7 @@ func NetworkSetDevMTU(devName string, mtu uint32) error {
 
 	// Only try and change the MTU if the requested mac is different to current one.
 	if curMTU != mtu {
-		err := network.InterfaceSetMTU(devName, fmt.Sprintf("%d", mtu))
+		err := iproute.InterfaceSetMTU(devName, fmt.Sprintf("%d", mtu))
 		if err != nil {
 			return err
 		}
@@ -64,7 +65,7 @@ func NetworkSetDevMAC(devName string, mac string) error {
 
 	// Only try and change the MAC if the requested mac is different to current one.
 	if curMac != mac {
-		err := network.InterfaceSetMAC(devName, mac)
+		err := iproute.InterfaceSetMAC(devName, mac)
 		if err != nil {
 			return err
 		}
@@ -98,7 +99,7 @@ func networkRemoveInterfaceIfNeeded(state *state.State, nic string, current inst
 		}
 	}
 
-	return network.InterfaceRemove(nic)
+	return iproute.InterfaceRemove(nic)
 }
 
 // networkCreateVlanDeviceIfNeeded creates a VLAN device if doesn't already exist.
@@ -158,11 +159,11 @@ func networkSnapshotPhysicalNic(hostName string, volatile map[string]string) err
 func networkRestorePhysicalNic(hostName string, volatile map[string]string) error {
 	// If we created the "physical" device and then it should be removed.
 	if shared.IsTrue(volatile["last_state.created"]) {
-		return network.InterfaceRemove(hostName)
+		return iproute.InterfaceRemove(hostName)
 	}
 
 	// Bring the interface down, as this is sometimes needed to change settings on the nic.
-	err := network.InterfaceBringDown(hostName)
+	err := iproute.InterfaceBringDown(hostName)
 	if err != nil {
 		return fmt.Errorf("Failed to bring down \"%s\": %v", hostName, err)
 	}
@@ -198,22 +199,22 @@ func networkRestorePhysicalNic(hostName string, volatile map[string]string) erro
 func networkCreateVethPair(hostName string, m deviceConfig.Device) (string, error) {
 	peerName := network.RandomDevName("veth")
 
-	err := network.IPLinkAddVeth(hostName, peerName)
+	err := iproute.IPLinkAddVeth(hostName, peerName)
 	if err != nil {
 		return "", fmt.Errorf("Failed to create the veth interfaces %s and %s: %v", hostName, peerName, err)
 	}
 
-	err = network.InterfaceBringUp(hostName)
+	err = iproute.InterfaceBringUp(hostName)
 	if err != nil {
-		network.InterfaceRemove(hostName)
+		iproute.InterfaceRemove(hostName)
 		return "", fmt.Errorf("Failed to bring up the veth interface %s: %v", hostName, err)
 	}
 
 	// Set the MAC address on peer.
 	if m["hwaddr"] != "" {
-		err := network.InterfaceSetMAC(peerName, m["hwaddr"])
+		err := iproute.InterfaceSetMAC(peerName, m["hwaddr"])
 		if err != nil {
-			network.InterfaceRemove(peerName)
+			iproute.InterfaceRemove(peerName)
 			return "", fmt.Errorf("Failed to set the MAC address: %v", err)
 		}
 	}
@@ -227,13 +228,13 @@ func networkCreateVethPair(hostName string, m deviceConfig.Device) (string, erro
 
 		err = NetworkSetDevMTU(peerName, uint32(mtu))
 		if err != nil {
-			network.InterfaceRemove(peerName)
+			iproute.InterfaceRemove(peerName)
 			return "", fmt.Errorf("Failed to set the MTU: %v", err)
 		}
 
 		err = NetworkSetDevMTU(hostName, uint32(mtu))
 		if err != nil {
-			network.InterfaceRemove(peerName)
+			iproute.InterfaceRemove(peerName)
 			return "", fmt.Errorf("Failed to set the MTU: %v", err)
 		}
 	} else if m["parent"] != "" {
@@ -244,13 +245,13 @@ func networkCreateVethPair(hostName string, m deviceConfig.Device) (string, erro
 
 		err = NetworkSetDevMTU(peerName, parentMTU)
 		if err != nil {
-			network.InterfaceRemove(peerName)
+			iproute.InterfaceRemove(peerName)
 			return "", fmt.Errorf("Failed to set the MTU: %v", err)
 		}
 
 		err = NetworkSetDevMTU(hostName, parentMTU)
 		if err != nil {
-			network.InterfaceRemove(peerName)
+			iproute.InterfaceRemove(peerName)
 			return "", fmt.Errorf("Failed to set the MTU: %v", err)
 		}
 	}
@@ -260,7 +261,7 @@ func networkCreateVethPair(hostName string, m deviceConfig.Device) (string, erro
 
 // networkCreateTap creates and configures a TAP device.
 func networkCreateTap(hostName string, m deviceConfig.Device) error {
-	err := network.InterfaceAddTAP(hostName)
+	err := iproute.InterfaceAddTAP(hostName)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to create the tap interfaces %s", hostName)
 	}
@@ -268,11 +269,11 @@ func networkCreateTap(hostName string, m deviceConfig.Device) error {
 	revert := revert.New()
 	defer revert.Fail()
 
-	err = network.InterfaceBringUp(hostName)
+	err = iproute.InterfaceBringUp(hostName)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to bring up the tap interface %s", hostName)
 	}
-	revert.Add(func() { network.InterfaceRemove(hostName) })
+	revert.Add(func() { iproute.InterfaceRemove(hostName) })
 
 	// Set the MTU on peer. If not specified and has parent, will inherit MTU from parent.
 	if m["mtu"] != "" {
@@ -361,7 +362,7 @@ func networkSetVethRoutes(s *state.State, m deviceConfig.Device) error {
 	if m["ipv4.routes"] != "" {
 		for _, route := range strings.Split(m["ipv4.routes"], ",") {
 			route = strings.TrimSpace(route)
-			err := network.IPv4AddRoute(route, routeDev, "", "boot")
+			err := iproute.IPv4AddRoute(route, routeDev, "", "boot")
 			if err != nil {
 				return err
 			}
@@ -372,7 +373,7 @@ func networkSetVethRoutes(s *state.State, m deviceConfig.Device) error {
 	if m["ipv6.routes"] != "" {
 		for _, route := range strings.Split(m["ipv6.routes"], ",") {
 			route = strings.TrimSpace(route)
-			err := network.IPv6AddRoute(route, routeDev, "", "boot")
+			err := iproute.IPv6AddRoute(route, routeDev, "", "boot")
 			if err != nil {
 				return err
 			}
@@ -414,7 +415,7 @@ func networkRemoveVethRoutes(s *state.State, m deviceConfig.Device) {
 	if m["ipv4.routes"] != "" {
 		for _, route := range strings.Split(m["ipv4.routes"], ",") {
 			route = strings.TrimSpace(route)
-			err := network.IPv4FlushRoute(route, routeDev, "boot")
+			err := iproute.IPv4FlushRoute(route, routeDev, "boot")
 			if err != nil {
 				logger.Errorf("Failed to remove static route: %s to %s: %s", route, routeDev, err)
 			}
@@ -425,7 +426,7 @@ func networkRemoveVethRoutes(s *state.State, m deviceConfig.Device) {
 	if m["ipv6.routes"] != "" {
 		for _, route := range strings.Split(m["ipv6.routes"], ",") {
 			route = strings.TrimSpace(route)
-			err := network.IPv6FlushRoute(route, routeDev, "boot")
+			err := iproute.IPv6FlushRoute(route, routeDev, "boot")
 			if err != nil {
 				logger.Errorf("Failed to remove static route: %s to %s: %s", route, routeDev, err)
 			}

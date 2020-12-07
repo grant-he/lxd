@@ -2,6 +2,7 @@ package device
 
 import (
 	"fmt"
+	"github.com/grant-he/lxd/lxd/iproute"
 
 	"github.com/pkg/errors"
 
@@ -113,7 +114,7 @@ func (d *nicPhysical) Start() (*deviceConfig.RunConfig, error) {
 
 		// Set the MAC address.
 		if d.config["hwaddr"] != "" {
-			err := network.InterfaceSetMAC(saveData["host_name"], d.config["hwaddr"])
+			err := iproute.InterfaceSetMAC(saveData["host_name"], d.config["hwaddr"])
 			if err != nil {
 				return nil, fmt.Errorf("Failed to set the MAC address: %s", err)
 			}
@@ -121,7 +122,7 @@ func (d *nicPhysical) Start() (*deviceConfig.RunConfig, error) {
 
 		// Set the MTU.
 		if d.config["mtu"] != "" {
-			err = network.InterfaceSetMTU(saveData["host_name"], d.config["mtu"])
+			err = iproute.InterfaceSetMTU(saveData["host_name"], d.config["mtu"])
 			if err != nil {
 				return nil, err
 			}

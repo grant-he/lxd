@@ -6,6 +6,7 @@ import (
 	deviceConfig "github.com/grant-he/lxd/lxd/device/config"
 	"github.com/grant-he/lxd/lxd/instance"
 	"github.com/grant-he/lxd/lxd/instance/instancetype"
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/network"
 	"github.com/grant-he/lxd/lxd/revert"
 	"github.com/grant-he/lxd/shared"
@@ -89,7 +90,7 @@ func (d *nicP2P) Start() (*deviceConfig.RunConfig, error) {
 		return nil, err
 	}
 
-	revert.Add(func() { network.InterfaceRemove(saveData["host_name"]) })
+	revert.Add(func() { iproute.InterfaceRemove(saveData["host_name"]) })
 
 	// Populate device config with volatile fields if needed.
 	networkVethFillFromVolatile(d.config, saveData)
@@ -185,7 +186,7 @@ func (d *nicP2P) postStop() error {
 
 	if d.config["host_name"] != "" && shared.PathExists(fmt.Sprintf("/sys/class/net/%s", d.config["host_name"])) {
 		// Removing host-side end of veth pair will delete the peer end too.
-		err := network.InterfaceRemove(d.config["host_name"])
+		err := iproute.InterfaceRemove(d.config["host_name"])
 		if err != nil {
 			return fmt.Errorf("Failed to remove interface %s: %s", d.config["host_name"], err)
 		}

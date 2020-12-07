@@ -8,6 +8,7 @@ import (
 	deviceConfig "github.com/grant-he/lxd/lxd/device/config"
 	"github.com/grant-he/lxd/lxd/instance"
 	"github.com/grant-he/lxd/lxd/instance/instancetype"
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/network"
 	"github.com/grant-he/lxd/lxd/project"
 	"github.com/grant-he/lxd/lxd/revert"
@@ -141,25 +142,25 @@ func (d *nicMACVLAN) Start() (*deviceConfig.RunConfig, error) {
 
 	if d.inst.Type() == instancetype.Container {
 		// Create MACVLAN interface.
-		err = network.IPLinkAddMacvlan(saveData["host_name"], actualParentName, "bridge")
+		err = iproute.IPLinkAddMacvlan(saveData["host_name"], actualParentName, "bridge")
 
 		if err != nil {
 			return nil, err
 		}
 	} else if d.inst.Type() == instancetype.VM {
 		// Create MACVTAP interface.
-		err = network.IPLinkAddMacvtap(saveData["host_name"], actualParentName, "bridge")
+		err = iproute.IPLinkAddMacvtap(saveData["host_name"], actualParentName, "bridge")
 
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	revert.Add(func() { network.InterfaceRemove(saveData["host_name"]) })
+	revert.Add(func() { iproute.InterfaceRemove(saveData["host_name"]) })
 
 	// Set the MAC address.
 	if d.config["hwaddr"] != "" {
-		err := network.InterfaceSetMAC(saveData["host_name"], d.config["hwaddr"])
+		err := iproute.InterfaceSetMAC(saveData["host_name"], d.config["hwaddr"])
 		if err != nil {
 			return nil, fmt.Errorf("Failed to set the MAC address: %s", err)
 		}
@@ -167,7 +168,7 @@ func (d *nicMACVLAN) Start() (*deviceConfig.RunConfig, error) {
 
 	// Set the MTU.
 	if d.config["mtu"] != "" {
-		err := network.InterfaceSetMTU(saveData["host_name"], d.config["mtu"])
+		err := iproute.InterfaceSetMTU(saveData["host_name"], d.config["mtu"])
 		if err != nil {
 			return nil, err
 		}
@@ -175,7 +176,7 @@ func (d *nicMACVLAN) Start() (*deviceConfig.RunConfig, error) {
 
 	if d.inst.Type() == instancetype.VM {
 		// Bring the interface up on host side.
-		err := network.InterfaceBringUp(saveData["host_name"])
+		err := iproute.InterfaceBringUp(saveData["host_name"])
 		if err != nil {
 			return nil, fmt.Errorf("Failed to bring up interface %s: %v", saveData["host_name"], err)
 		}
@@ -233,7 +234,7 @@ func (d *nicMACVLAN) postStop() error {
 
 	// Delete the detached device.
 	if v["host_name"] != "" && shared.PathExists(fmt.Sprintf("/sys/class/net/%s", v["host_name"])) {
-		err := network.InterfaceRemove(v["host_name"])
+		err := iproute.InterfaceRemove(v["host_name"])
 		if err != nil {
 			errs = append(errs, err)
 		}

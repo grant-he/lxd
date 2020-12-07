@@ -6,7 +6,7 @@ import (
 	deviceConfig "github.com/grant-he/lxd/lxd/device/config"
 	"github.com/grant-he/lxd/lxd/instance"
 	"github.com/grant-he/lxd/lxd/instance/instancetype"
-	"github.com/grant-he/lxd/lxd/network"
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/resources"
 	"github.com/grant-he/lxd/shared"
 	"github.com/grant-he/lxd/shared/api"
@@ -120,7 +120,7 @@ func (d *infinibandSRIOV) Start() (*deviceConfig.RunConfig, error) {
 
 	// Set the MTU.
 	if d.config["mtu"] != "" {
-		err = network.InterfaceSetMTU(saveData["host_name"], d.config["mtu"])
+		err = iproute.InterfaceSetMTU(saveData["host_name"], d.config["mtu"])
 		if err != nil {
 			return nil, err
 		}

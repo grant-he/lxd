@@ -17,6 +17,7 @@ import (
 	deviceConfig "github.com/grant-he/lxd/lxd/device/config"
 	"github.com/grant-he/lxd/lxd/instance"
 	"github.com/grant-he/lxd/lxd/instance/instancetype"
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/network"
 	"github.com/grant-he/lxd/lxd/project"
 	"github.com/grant-he/lxd/lxd/revert"
@@ -152,7 +153,7 @@ func (d *nicSRIOV) Start() (*deviceConfig.RunConfig, error) {
 	if d.inst.Type() == instancetype.Container {
 		// Set the MAC address.
 		if d.config["hwaddr"] != "" {
-			err := network.InterfaceSetMAC(saveData["host_name"], d.config["hwaddr"])
+			err := iproute.InterfaceSetMAC(saveData["host_name"], d.config["hwaddr"])
 			if err != nil {
 				return nil, fmt.Errorf("Failed to set the MAC address: %s", err)
 			}
@@ -160,14 +161,14 @@ func (d *nicSRIOV) Start() (*deviceConfig.RunConfig, error) {
 
 		// Set the MTU.
 		if d.config["mtu"] != "" {
-			err = network.InterfaceSetMTU(saveData["host_name"], d.config["mtu"])
+			err = iproute.InterfaceSetMTU(saveData["host_name"], d.config["mtu"])
 			if err != nil {
 				return nil, err
 			}
 		}
 
 		// Bring the interface up.
-		err = network.InterfaceBringUp(saveData["host_name"])
+		err = iproute.InterfaceBringUp(saveData["host_name"])
 		if err != nil {
 			return nil, fmt.Errorf("Failed to bring up the interface: %v", err)
 		}
@@ -279,7 +280,7 @@ func (d *nicSRIOV) findFreeVirtualFunction(reservedDevices map[string]struct{}) 
 	}
 
 	// Ensure parent is up (needed for Intel at least).
-	err = network.InterfaceBringUp(d.config["parent"])
+	err = iproute.InterfaceBringUp(d.config["parent"])
 	if err != nil {
 		return "", 0, err
 	}
@@ -433,7 +434,7 @@ func (d *nicSRIOV) setupSriovParent(vfDevice string, vfID int, volatile map[stri
 
 	// Setup VF VLAN if specified.
 	if d.config["vlan"] != "" {
-		err := network.VFSetVLAN(d.config["parent"], volatile["last_state.vf.id"], d.config["vlan"])
+		err := iproute.VFSetVLAN(d.config["parent"], volatile["last_state.vf.id"], d.config["vlan"])
 		if err != nil {
 			return vfPCIDev, err
 		}
@@ -450,13 +451,13 @@ func (d *nicSRIOV) setupSriovParent(vfDevice string, vfID int, volatile map[stri
 		}
 
 		// Set MAC on VF (this combined with spoof checking prevents any other MAC being used).
-		err = network.VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], mac)
+		err = iproute.VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], mac)
 		if err != nil {
 			return vfPCIDev, err
 		}
 
 		// Now that MAC is set on VF, we can enable spoof checking.
-		err = network.VFSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], "on")
+		err = iproute.VFSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], "on")
 		if err != nil {
 			return vfPCIDev, err
 		}
@@ -464,10 +465,10 @@ func (d *nicSRIOV) setupSriovParent(vfDevice string, vfID int, volatile map[stri
 		// Try to reset VF to ensure no previous MAC restriction exists, as some devices require this
 		// before being able to set a new VF MAC or disable spoofchecking. However some devices don't
 		// allow it so ignore failures.
-		_ = network.VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], "00:00:00:00:00:00")
+		_ = iproute.VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], "00:00:00:00:00:00")
 
 		// Ensure spoof checking is disabled if not enabled in instance.
-		err = network.VFSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], "off")
+		err = iproute.VFSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], "off")
 		if err != nil {
 			return vfPCIDev, err
 		}
@@ -480,7 +481,7 @@ func (d *nicSRIOV) setupSriovParent(vfDevice string, vfID int, volatile map[stri
 				mac = volatile["last_state.hwaddr"]
 			}
 
-			err = network.VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], mac)
+			err = iproute.VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], mac)
 			if err != nil {
 				return vfPCIDev, err
 			}
@@ -711,7 +712,7 @@ func (d *nicSRIOV) restoreSriovParent(volatile map[string]string) error {
 
 	// Reset VF VLAN if specified
 	if volatile["last_state.vf.vlan"] != "" {
-		err := network.VFSetVLAN(d.config["parent"], volatile["last_state.vf.id"], volatile["last_state.vf.vlan"])
+		err := iproute.VFSetVLAN(d.config["parent"], volatile["last_state.vf.id"], volatile["last_state.vf.vlan"])
 		if err != nil {
 			return err
 		}
@@ -725,7 +726,7 @@ func (d *nicSRIOV) restoreSriovParent(volatile map[string]string) error {
 			mode = "on"
 		}
 
-		err := network.VFSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], mode)
+		err := iproute.VFSetSpoofchk(d.config["parent"], volatile["last_state.vf.id"], mode)
 		if err != nil {
 			return err
 		}
@@ -733,7 +734,7 @@ func (d *nicSRIOV) restoreSriovParent(volatile map[string]string) error {
 
 	// Reset VF MAC specified if specified.
 	if volatile["last_state.vf.hwaddr"] != "" {
-		err = network.VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], volatile["last_state.vf.hwaddr"])
+		err = iproute.VFSetMAC(d.config["parent"], volatile["last_state.vf.id"], volatile["last_state.vf.hwaddr"])
 		if err != nil {
 			return err
 		}

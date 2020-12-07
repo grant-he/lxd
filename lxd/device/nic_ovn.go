@@ -14,6 +14,7 @@ import (
 	"github.com/grant-he/lxd/lxd/dnsmasq/dhcpalloc"
 	"github.com/grant-he/lxd/lxd/instance"
 	"github.com/grant-he/lxd/lxd/instance/instancetype"
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/lxd/network"
 	"github.com/grant-he/lxd/lxd/network/openvswitch"
 	"github.com/grant-he/lxd/lxd/project"
@@ -245,7 +246,7 @@ func (d *nicOVN) Start() (*deviceConfig.RunConfig, error) {
 		return nil, err
 	}
 
-	revert.Add(func() { network.InterfaceRemove(saveData["host_name"]) })
+	revert.Add(func() { iproute.InterfaceRemove(saveData["host_name"]) })
 
 	// Populate device config with volatile fields if needed.
 	networkVethFillFromVolatile(d.config, saveData)
@@ -398,11 +399,11 @@ func (d *nicOVN) Update(oldDevices deviceConfig.Devices, isRunning bool) error {
 	// veth interface to give the instance a chance to detect the change and re-apply for an
 	// updated lease with new IP address.
 	if d.config["ipv6.address"] != oldConfig["ipv6.address"] && d.config["host_name"] != "" && shared.PathExists(fmt.Sprintf("/sys/class/net/%s", d.config["host_name"])) {
-		err := network.InterfaceBringDown(d.config["host_name"])
+		err := iproute.InterfaceBringDown(d.config["host_name"])
 		if err != nil {
 			return err
 		}
-		err = network.InterfaceBringUp(d.config["host_name"])
+		err = iproute.InterfaceBringUp(d.config["host_name"])
 		if err != nil {
 			return err
 		}
@@ -476,7 +477,7 @@ func (d *nicOVN) postStop() error {
 		}
 
 		// Removing host-side end of veth pair will delete the peer end too.
-		err = network.InterfaceRemove(d.config["host_name"])
+		err = iproute.InterfaceRemove(d.config["host_name"])
 		if err != nil {
 			return errors.Wrapf(err, "Failed to remove interface %q", d.config["host_name"])
 		}
