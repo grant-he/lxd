@@ -3,13 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/grant-he/lxd/lxd/network"
-
 	"github.com/spf13/cobra"
 
 	// Used by cgo
 	_ "github.com/grant-he/lxd/lxd/include"
 
+	"github.com/grant-he/lxd/lxd/iproute"
 	"github.com/grant-he/lxd/shared/netutils"
 )
 
@@ -188,21 +187,21 @@ func (c *cmdForknet) RunDetach(cmd *cobra.Command, args []string) error {
 
 	// Remove all IP addresses from interface before moving to parent netns.
 	// This is to avoid any container address config leaking into host.
-	err := network.InterfaceFlushAddresses(ifName)
+	err := iproute.InterfaceFlushAddresses(ifName)
 	if err != nil {
 		return err
 	}
 
 	// Rename the interface, set it down, and move into parent netns.
-	err = network.InterfaceBringDown(ifName)
+	err = iproute.InterfaceBringDown(ifName)
 	if err != nil {
 		return err
 	}
-	err = network.InterfaceSetNamespace(ifName, lxdPID)
+	err = iproute.InterfaceSetNamespace(ifName, lxdPID)
 	if err != nil {
 		return err
 	}
-	err = network.InterfaceRename(ifName, hostName)
+	err = iproute.InterfaceRename(ifName, hostName)
 	if err != nil {
 		return err
 	}
